@@ -1,0 +1,4 @@
+/home/saenttor/Documents/Projects/automotive-IDS-NN/obj/Debug/net9.0/automotive-IDS-NN.GeneratedMSBuildEditorConfig.editorconfig
+/home/saenttor/Documents/Projects/automotive-IDS-NN/obj/Debug/net9.0/automotive-IDS-NN.AssemblyInfoInputs.cache
+/home/saenttor/Documents/Projects/automotive-IDS-NN/obj/Debug/net9.0/automotive-IDS-NN.AssemblyInfo.cs
+/home/saenttor/Documents/Projects/automotive-IDS-NN/obj/Debug/net9.0/automotive-IDS-NN.csproj.CoreCompileInputs.cache
