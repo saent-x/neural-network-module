@@ -19,12 +19,10 @@ public class Layer{
         foreach (var node in Nodes) node.Calc();
     }
 
-    public void Link(Layer nextLayer){
-        foreach (var nextNode in nextLayer.Nodes)
-        {
-            foreach(var node in Nodes){
-                nextNode.Add(node);
-            }
-        }
+    public void Link(Layer next_layer)
+    {
+        foreach (var nextNode in next_layer.Nodes)
+        foreach (var node in Nodes)
+            nextNode.Add(node);
     }
 }
