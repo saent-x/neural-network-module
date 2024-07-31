@@ -10,7 +10,7 @@ public class IDSNeuralNet{
         var input_layer = new Layer(input_size + 2);
         Layers.Add(input_layer);
         
-        // middle layer of nn
+        // middle layer of nn   
         for (var i = 0; i < depth; i++)
         {
             var middle_layer = new Layer(3);
@@ -29,6 +29,25 @@ public class IDSNeuralNet{
             
             previous_layer.Link(next_layer);
         }
+    }
+
+    public List<double> GetResults(List<double> inputs)
+    {
+        // load inputs
+        var first_layer = Layers[0];
+        var local_inputs = new List<double>(inputs) { -1, 1 };
+
+        for (var i = 0; i < local_inputs.Count; i++) first_layer.Nodes[i].Result = local_inputs[i];
+        foreach (var layer in Layers) layer.Calc();
+
+        var last_layer = Layers.Last();
+        var results = last_layer.Nodes.Select(x => x.Result)
+            .ToList();
+
+        // clear results
+        foreach (var node in Layers.SelectMany(layer => layer.Nodes)) node.Result = 0;
+
+        return results;
     }
 
 }
