@@ -1,17 +1,11 @@
 namespace IDS_NN.pkg;
 
-public class Node{
-    public Dictionary<Node, double> InputNodes { get; set; }
-    public double Result { get; set; }
-    public Func<double, double> Sigmoid { get; set; }
+public class Node(Func<double, double> sigmoid, double result)
+{
+    public Dictionary<Node, double> InputNodes { get; set; } = new();
+    public double Result { get; set; } = result;
+    private Func<double, double> Sigmoid { get; set; } = sigmoid;
 
-    public Node(Func<double, double> sigmoid, double result){
-        InputNodes = new();
-
-        Sigmoid = sigmoid;
-        Result = result;
-    }
-        
     public void Add(Node node) =>
         InputNodes?.Add(node, 0.00001 /* TODO: update value*/);
 
