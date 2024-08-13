@@ -1,47 +1,19 @@
-﻿
-using IDS_NN.pkg;
+﻿global using Spectre.Console;
+global using Console = Spectre.Console.AnsiConsole;
+using PandasNet;
+using NumSharp;
+using IDS_NN.core;
 
-Console.WriteLine("info: loading training data...");
-#region load training Data
-List<DataFrame> training_data = [
-    new DataFrame
-    {
-        Inputs = new List<double>() {0, 0},
-        Targets = new List<double>() {0}
-    },
-    new DataFrame
-    {
-        Inputs = new List<double>() {0, 1},
-        Targets = new List<double>() {1}
-    },
-    new DataFrame
-    {
-        Inputs = new List<double>() {1, 0},
-        Targets = new List<double>() {1}
-    },
-    new DataFrame
-    {
-        Inputs = new List<double>() {0, 0},
-        Targets = new List<double>() {0}
-    }
-];
-#endregion
+// set seed state
+np.random.seed(0);
 
-Console.WriteLine("info: generating neural network");
-#region generate NN
-var nn = new NN(2, 1, 2);
-nn.Train(training_data, 0.05);
-#endregion
+var X = new float[3,4]{
+	{1,2,3, 2.5f},
+	{2.0f, 5.0f, -1.0f, 2.0f},
+	{-1.5f, 2.7f, 3.3f, -0.8f}
+};
 
-Console.WriteLine("info: test results");
-#region test and generate results
-foreach (var data in training_data)
-{
-    var outputs = nn.GetResults(data.Inputs!);
-    Console.WriteLine($"\nresults: I({data.Inputs![0]} , {data.Inputs[1]}) - O({outputs[0]})");
-    Console.WriteLine($"expected result: O({data.Targets![0]})");
-}
+var layer_1 = new LayerDense(4, 5);
+var layer_2 = new LayerDense(5, 2);
 
-Console.WriteLine("complete: neural network operations complete.");
-Console.ReadKey();
-#endregion
+layer_1.Forward(X);
