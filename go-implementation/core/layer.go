@@ -1,8 +1,10 @@
 package core
 
 import (
+	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"
-	"math/rand"
+
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
 type Layer struct {
@@ -13,6 +15,12 @@ type Layer struct {
 }
 
 func CreateLayer(n_inputs int, n_neurons int) *Layer {
+	r := distuv.Normal{
+		Mu:    0,
+		Sigma: 1,
+		Src:   rand.NewSource(0), // Seed for reproducibility
+	}
+
 	layer := new(Layer)
 
 	layer._biases = mat.NewDense(1, n_neurons, make([]float64, n_neurons))
@@ -21,7 +29,7 @@ func CreateLayer(n_inputs int, n_neurons int) *Layer {
 
 	for i := 0; i < n_inputs; i++ {
 		for j := 0; j < n_neurons; j++ {
-			layer._weights.Set(i, j, 0.10*rand.Float64())
+			layer._weights.Set(i, j, 0.01*r.Rand())
 		}
 	}
 
