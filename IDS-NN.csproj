@@ -8,7 +8,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
   <ItemGroup>
+    <PackageReference Include="Numpy" Version="3.11.1.33" />
     <PackageReference Include="NumSharp" Version="0.30.0" />
     <PackageReference Include="Pandas.NET" Version="0.6.0" />
     <PackageReference Include="Spectre.Console" Version="0.49.1" />

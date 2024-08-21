@@ -8,26 +8,27 @@ using IDS_NN.core;
 // set seed state
 np.random.seed(0);
 
-// var X = new float[3,4]{
-// 	{1,2,3, 2.5f},
-// 	{2.0f, 5.0f, -1.0f, 2.0f},
-// 	{-1.5f, 2.7f, 3.3f, -0.8f}	
-// };
+var (X, y) = Utilities.SpiralData(100, 3);
 
-// var layer_1 = new LayerDense(4, 5);
-// var layer_2 = new LayerDense(5, 2);
+//Console.WriteLine($"[{X.max()}]");
+NDArray arr = new float[]{0.00129555f, 0.00139436f, 0.00293134f};
+Console.WriteLine($"{np.maximum(0, arr)}");
 
+// var layer_1 = new LayerDense(2, 5);
+// var activation_1 = new ActivationReLU();
+// //
 // layer_1.Forward(X);
-// //Console.WriteLine($"layer_1: [{layer_1.Output}]");
+// activation_1.Forward(layer_1.Output);
+// //
+// Console.WriteLine($"{layer_1.Output.max()}");
+// Console.WriteLine($"\n------------------------------------------\n");
+// Console.WriteLine($"{activation_1.Output.max()}");
 
-// layer_2.Forward(layer_1.Output);
-// Console.WriteLine($"layer_2: [{layer_2.Output}]");
-
-var inputs = new float[]{ 0,2, -1, 3.3f, -2.7f, 1.1f, 2.2f, -100 };
-List<float> output = [];
-
-foreach(var i in inputs) output.Add(Math.Max(0, i));
-
-Console.Write("[ ");
-output.ForEach(x => Console.Write($"{x}, "));
-Console.Write(" ]\n");
+// ----------------------------------------------------
+// var z1 = new double[3] { 1, 2, 3 };
+// var z2 = new double[3] { 4, 5, 6 };
+//
+// var r1 = @Utilities.ConcatenateColwise(z1, z2);
+//
+// r1.PrintArray();
+// Console.WriteLine($"[{r1.Shape}]");
