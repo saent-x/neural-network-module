@@ -46,7 +46,7 @@ func SpiralData(samples, classes int) (*mat.Dense, []uint8) {
 	return X, y
 }
 
-func PlotData(X *mat.Dense, y []uint8, samples, classes int) {
+func PlotData(X *mat.Dense, y []uint8, samples, classes int) bool {
 	p := plot.New()
 
 	p.Title.Text = "Spiral Data"
@@ -83,5 +83,10 @@ func PlotData(X *mat.Dense, y []uint8, samples, classes int) {
 	// Save the plot to a PNG file
 	if err := p.Save(8*vg.Inch, 8*vg.Inch, "spiral.png"); err != nil {
 		log.Fatalf("could not save plot: %v", err)
+
+		return false
+	} else {
+		return true
 	}
+
 }

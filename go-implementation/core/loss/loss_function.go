@@ -1,4 +1,4 @@
-package core
+package loss
 
 import (
 	"gonum.org/v1/gonum/mat"

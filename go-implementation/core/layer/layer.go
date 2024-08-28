@@ -1,4 +1,4 @@
-package core
+package layer
 
 import (
 	"golang.org/x/exp/rand"
