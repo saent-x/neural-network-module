@@ -1,0 +1,6 @@
+fmt.Println(mat.Formatted(X))
+fmt.Println(y)
+
+fmt.Println("Plotting data...")
+core.PlotData(X, y, 100, 3)
+fmt.Println("Data plotted and saved to spiral.png")
