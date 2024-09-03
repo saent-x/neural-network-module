@@ -13,9 +13,9 @@ func TestSpiralData(t *testing.T) {
 }
 
 func TestScatterPlotFunction(t *testing.T) {
-	X, y := SpiralData(100, 3)
+	X, _ := SpiralData(100, 3)
 
-	result := PlotData(X, y, 100, 3)
+	result := PlotData(X, 100, 3)
 
 	if !result {
 		t.Errorf("error: no plot was made")

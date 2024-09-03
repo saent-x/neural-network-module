@@ -21,9 +21,9 @@ func linspace(start, stop float64, num int) []float64 {
 	return arr
 }
 
-func SpiralData(samples, classes int) (*mat.Dense, []uint8) {
+func SpiralData(samples, classes int) (*mat.Dense, *mat.Dense) {
 	X := mat.NewDense(samples*classes, 2, nil)
-	y := make([]uint8, samples*classes)
+	y := make([]float64, samples*classes)
 
 	for classNumber := 0; classNumber < classes; classNumber++ {
 		ixStart := samples * classNumber
@@ -39,14 +39,14 @@ func SpiralData(samples, classes int) (*mat.Dense, []uint8) {
 			rIndex := i - ixStart
 			X.Set(i, 0, r[rIndex]*math.Sin(t[rIndex]*2.5))
 			X.Set(i, 1, r[rIndex]*math.Cos(t[rIndex]*2.5))
-			y[i] = uint8(classNumber)
+			y[i] = float64(classNumber)
 		}
 	}
 
-	return X, y
+	return X, mat.NewDense(1, len(y), y)
 }
 
-func PlotData(X *mat.Dense, y []uint8, samples, classes int) bool {
+func PlotData(X *mat.Dense, samples, classes int) bool {
 	p := plot.New()
 
 	p.Title.Text = "Spiral Data"
