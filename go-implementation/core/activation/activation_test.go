@@ -32,8 +32,4 @@ func TestForwardFunction(t *testing.T) {
 	if activation_2.Output == nil {
 		t.Errorf("error: activation_2 is nil and invalid!")
 	}
-
-	// r, c := activation_2.Output.Dims()
-	// last_5_rows := activation_2.Output.Slice(r-5, r, 0, c)
-	// fmt.Println(mat.Formatted(last_5_rows))
 }
