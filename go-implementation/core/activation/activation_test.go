@@ -1,8 +1,10 @@
 package activation
 
 import (
+	"fmt"
 	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/layer"
+	"gonum.org/v1/gonum/mat"
 	"testing"
 )
 
@@ -15,7 +17,7 @@ func TestActivationCreation(t *testing.T) {
 	}
 }
 
-func TestForwardFunction(t *testing.T) {
+func TestActivationForwardFunction(t *testing.T) {
 	X, _ := core.SpiralData(100, 3)
 
 	layer_1 := layer.CreateLayer(2, 3)
@@ -31,5 +33,18 @@ func TestForwardFunction(t *testing.T) {
 
 	if activation_2.Output == nil {
 		t.Errorf("error: activation_2 is nil and invalid!")
+	}
+}
+
+func TestSoftmaxFunction(t *testing.T) {
+	inputs := mat.NewDense(3, 3, []float64{0.7, 0.1, 0.2, 0.1, 0.5, 0.4, 0.02, 0.9, 0.08})
+
+	softmax := new(SoftMax)
+	softmax.Forward(inputs)
+
+	fmt.Println(mat.Formatted(softmax.Output))
+
+	if softmax.Output == nil {
+		t.Errorf("error: softmax output is nil!")
 	}
 }
