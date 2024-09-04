@@ -37,21 +37,20 @@ func (lf *CrossEntropyLossFunction) forward(y_pred *mat.Dense, y_true *mat.Dense
 	}, y_pred)
 
 	if rows == 1 {
+		// check this calculation
 		var correct_confidences []float64
 
 		lo.ForEach(lo.Range(samples), func(item int, index int) {
-			value := y_pred_clipped.At(index, int(y_true.RawMatrix().Data[index])) // given that the data contained in y_true is one-hot encoded (0,1)
+			value := y_pred_clipped.At(index, int(y_true.RawMatrix().Data[index]))
 			correct_confidences = append(correct_confidences, -math.Log(value))
 		})
 
 		return correct_confidences
-
 	} else if rows > 1 {
 		// for hot-one encoded categorical variables
 		var correct_confidences []float64
 
 		y_pred_y_true_product := mat.NewDense(samples, columns, nil)
-
 		y_pred_y_true_product.Mul(y_pred_clipped, y_true)
 
 		// sum each row and calc the natural logarithm of the sum
@@ -62,7 +61,7 @@ func (lf *CrossEntropyLossFunction) forward(y_pred *mat.Dense, y_true *mat.Dense
 
 		return correct_confidences
 	} else {
-		log.Fatalln("an error occurred")
+		log.Fatalln("invalid row/sample size")
 		return nil
 	}
 }
