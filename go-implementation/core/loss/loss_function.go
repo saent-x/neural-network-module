@@ -51,7 +51,7 @@ func (lf *CrossEntropyLossFunction) forward(y_pred *mat.Dense, y_true *mat.Dense
 		var correct_confidences []float64
 
 		y_pred_y_true_product := mat.NewDense(samples, columns, nil)
-		y_pred_y_true_product.Mul(y_pred_clipped, y_true)
+		y_pred_y_true_product.MulElem(y_pred_clipped, y_true)
 
 		// sum each row and calc the natural logarithm of the sum
 		lo.ForEach(lo.Range(samples), func(item int, index int) {
