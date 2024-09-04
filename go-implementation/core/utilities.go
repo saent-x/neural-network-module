@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+	"github.com/samber/lo"
 	"image/color"
 	"log"
 	"math"
@@ -19,6 +21,22 @@ func linspace(start, stop float64, num int) []float64 {
 		arr[i] = start + step*float64(i)
 	}
 	return arr
+}
+
+func VerticalData(samples, classes int) (*mat.Dense, *mat.Dense) {
+	X := mat.NewDense(samples*classes, 2, nil)
+	y := make([]float64, samples*classes)
+
+	for _, class_number := range lo.Range(classes) {
+		ix := lo.RangeWithSteps(samples*class_number, samples*(class_number+1), 1)
+
+		lo.ForEach(ix, func(item int, index int) {
+			X.Set(item, 0, rand.NormFloat64()*0.1+float64(class_number)/3)
+			X.Set(item, 1, rand.NormFloat64()*0.1+0.5)
+			y[item] = float64(class_number)
+		})
+	}
+	return X, mat.NewDense(1, len(y), y)
 }
 
 func SpiralData(samples, classes int) (*mat.Dense, *mat.Dense) {
@@ -46,10 +64,10 @@ func SpiralData(samples, classes int) (*mat.Dense, *mat.Dense) {
 	return X, mat.NewDense(1, len(y), y)
 }
 
-func PlotData(X *mat.Dense, samples, classes int) bool {
+func PlotData(X *mat.Dense, samples, classes int, filepath string) bool {
 	p := plot.New()
 
-	p.Title.Text = "Spiral Data"
+	p.Title.Text = fmt.Sprintf("%v Data", lo.PascalCase(filepath))
 	p.X.Label.Text = "X"
 	p.Y.Label.Text = "Y"
 
@@ -81,7 +99,7 @@ func PlotData(X *mat.Dense, samples, classes int) bool {
 	}
 
 	// Save the plot to a PNG file
-	if err := p.Save(8*vg.Inch, 8*vg.Inch, "spiral.png"); err != nil {
+	if err := p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s.png", filepath)); err != nil {
 		log.Fatalf("could not save plot: %v", err)
 
 		return false
