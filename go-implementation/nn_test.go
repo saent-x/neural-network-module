@@ -6,8 +6,8 @@ import (
 	"github.com/saent-x/ids-nn/core/activation"
 	"github.com/saent-x/ids-nn/core/layer"
 	"github.com/saent-x/ids-nn/core/loss"
+	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/stat"
 	"testing"
 )
 
@@ -28,15 +28,44 @@ func TestNeuralNetworkLossFunction_1(t *testing.T) {
 	layer_2.Forward(activation_1.Output)
 	activation_2.Forward(layer_2.Output)
 
-	r, c := activation_2.Output.Dims()
-	fmt.Println(mat.Formatted(activation_2.Output.Slice(r-5, r, 0, c)))
-
 	loss_value := lossfn_1.Calculate(activation_2.Output, y)
 
 	fmt.Println("loss: ", loss_value)
 }
 
+func TestNeuralNetworkLossFunction_2(t *testing.T) {
+	softmax_output := mat.NewDense(3, 3, []float64{0.7, 0.1, 0.2, 0.1, 0.5, 0.4, 0.02, 0.9, 0.08})
+	class_target := mat.NewDense(3, 3, []float64{1, 0, 0, 0, 1, 0, 0, 1, 0})
+
+	cross_entropy := new(loss.CrossEntropyLossFunction)
+	loss_value := cross_entropy.Calculate(softmax_output, class_target)
+
+	got := loss_value
+	want := 0.38506088005216804
+
+	if got != want {
+		t.Errorf("error: got %f | want %f", got, want)
+	}
+
+	fmt.Println(got)
+}
+
 func TestMisc(t *testing.T) {
-	a := []float64{1, 2, 3, 4, 5}
-	fmt.Println(stat.Mean(a, nil))
+	X, y := core.SpiralData(100, 3)
+
+	r, _ := X.Dims()
+
+	lo.ForEach(lo.Range(r), func(item int, index int) {
+		row := X.RawRowView(index)
+		fmt.Printf("[%f, %f], ", row[0], row[1])
+	})
+
+	_, c := y.Dims()
+
+	fmt.Println()
+
+	lo.ForEach(lo.Range(c), func(item int, index int) {
+		fmt.Printf("%d, ", int(y.At(0, index)))
+	})
+
 }
