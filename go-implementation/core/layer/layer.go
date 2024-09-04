@@ -13,12 +13,6 @@ type Layer struct {
 }
 
 func CreateLayer(n_inputs int, n_neurons int) *Layer {
-	//r := distuv.Normal{
-	//	Mu:    0,
-	//	Sigma: 1,
-	//	Src:   rand.NewSource(0), // Seed for reproducibility
-	//}
-
 	layer := new(Layer)
 
 	layer._biases = mat.NewDense(1, n_neurons, make([]float64, n_neurons))
