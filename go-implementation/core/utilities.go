@@ -3,15 +3,14 @@ package core
 import (
 	"fmt"
 	"github.com/samber/lo"
-	"image/color"
-	"log"
-	"math"
-	"math/rand"
-
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
+	"image/color"
+	"log"
+	"math"
+	"math/rand"
 )
 
 func linspace(start, stop float64, num int) []float64 {
@@ -64,12 +63,13 @@ func SpiralData(samples, classes int) (*mat.Dense, *mat.Dense) {
 	return X, mat.NewDense(1, len(y), y)
 }
 
-func PlotData(X *mat.Dense, samples, classes int, filepath string) bool {
+func PlotScatter(X *mat.Dense, samples, classes int, filepath string) bool {
 	p := plot.New()
 
 	p.Title.Text = fmt.Sprintf("%v Data", lo.PascalCase(filepath))
 	p.X.Label.Text = "X"
 	p.Y.Label.Text = "Y"
+	p.Add(plotter.NewGrid())
 
 	// Define different colors for different classes
 	colors := []color.RGBA{
@@ -84,8 +84,9 @@ func PlotData(X *mat.Dense, samples, classes int, filepath string) bool {
 		pts := make(plotter.XYs, samples)
 		for i := 0; i < samples; i++ {
 			index := classNumber*samples + i
-			pts[i].X = X.At(index, 0)
+			pts[i].X = X.At(index, 0) // since Y has two features/ columns
 			pts[i].Y = X.At(index, 1)
+
 		}
 
 		s, err := plotter.NewScatter(pts)
@@ -106,5 +107,41 @@ func PlotData(X *mat.Dense, samples, classes int, filepath string) bool {
 	} else {
 		return true
 	}
+}
 
+func PlotLine(x []float64, y []float64) *plot.Plot {
+	p := plot.New()
+
+	p.X.Label.Text = "X"
+	p.Y.Label.Text = "Y"
+	p.Add(plotter.NewGrid())
+
+	XY_pts := make(plotter.XYs, len(x))
+
+	for i := 0; i < len(XY_pts); i++ {
+		XY_pts[i].X = x[i]
+		XY_pts[i].Y = y[i]
+	}
+
+	s, err := plotter.NewLine(XY_pts)
+	if err != nil {
+		log.Fatalf("could not create line plot: %v", err)
+	}
+	s.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255} //red
+	p.Add(s)
+
+	return p
+}
+
+func SavePlot(p *plot.Plot, filepath string) bool {
+	p.Title.Text = fmt.Sprintf("%v Data", lo.PascalCase(filepath))
+
+	// Save the plot to a PNG file
+	if err := p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s.png", filepath)); err != nil {
+		log.Fatalf("could not save plot: %v", err)
+
+		return false
+	} else {
+		return true
+	}
 }

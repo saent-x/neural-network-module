@@ -31,7 +31,7 @@ func TestVerticalData(t *testing.T) {
 func TestScatterPlotFunctionForSpiralData(t *testing.T) {
 	X, _ := SpiralData(100, 3)
 
-	result := PlotData(X, 100, 3, "spiral")
+	result := PlotScatter(X, 100, 3, "spiral")
 
 	if !result {
 		t.Errorf("error: no plot was made")
@@ -41,7 +41,7 @@ func TestScatterPlotFunctionForSpiralData(t *testing.T) {
 func TestScatterPlotFunctionForVerticalData(t *testing.T) {
 	X, _ := VerticalData(100, 3)
 
-	result := PlotData(X, 100, 3, "vertical")
+	result := PlotScatter(X, 100, 3, "vertical")
 
 	if !result {
 		t.Errorf("error: no plot was made")
