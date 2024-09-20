@@ -7,7 +7,8 @@ import (
 )
 
 type SoftMax struct {
-	Output *mat.Dense
+	Output   *mat.Dense
+	D_Inputs *mat.Dense
 }
 
 func (sm *SoftMax) Forward(inputs *mat.Dense) {
@@ -58,4 +59,31 @@ func (sm *SoftMax) Forward(inputs *mat.Dense) {
 	})
 
 	sm.Output = probabilities
+}
+
+func (sm *SoftMax) Backward(d_values *mat.Dense) {
+	//r, c := inputs.Dims()
+	sm.D_Inputs = mat.DenseCopyOf(d_values)
+	sm.D_Inputs.Zero() // empty
+
+	r, _ := d_values.Dims()
+
+	for i, _ := range lo.Range(r) {
+		raw_row := sm.Output.RawRowView(i)
+		single_output := mat.NewDense(len(raw_row), 1, raw_row)
+
+		_, c := single_output.T().Dims()
+		diag_flat := mat.NewDiagDense(single_output.RawMatrix().Rows, raw_row)
+
+		mul_single_output := mat.NewDense(single_output.RawMatrix().Rows, c, nil)
+		mul_single_output.Mul(single_output, single_output.T())
+
+		jacobian_matrix := mat.NewDense(single_output.RawMatrix().Rows, single_output.RawMatrix().Rows, nil)
+		jacobian_matrix.Sub(diag_flat, mul_single_output)
+
+		var result mat.Dense
+		result.Mul(jacobian_matrix, d_values.RowView(i))
+
+		sm.D_Inputs.SetRow(i, result.RawMatrix().Data)
+	}
 }
