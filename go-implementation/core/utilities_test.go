@@ -47,3 +47,10 @@ func TestScatterPlotFunctionForVerticalData(t *testing.T) {
 		t.Errorf("error: no plot was made")
 	}
 }
+
+func TestSparseToOHE_1(t *testing.T) {
+	data := mat.NewDense(1, 3, []float64{0, 0, 1})
+	result := SparseToOHE(data, 3)
+
+	fmt.Println(mat.Formatted(result))
+}
