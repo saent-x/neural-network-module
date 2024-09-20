@@ -1,6 +1,7 @@
 package loss
 
 import (
+	"github.com/saent-x/ids-nn/core"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
@@ -17,7 +18,8 @@ type ILoss interface {
 }
 
 type CrossEntropyLossFunction struct {
-	Loss float64
+	Loss     float64
+	D_Inputs *mat.Dense
 }
 
 func (lf *CrossEntropyLossFunction) Calculate(output *mat.Dense, y *mat.Dense) float64 {
@@ -64,4 +66,30 @@ func (lf *CrossEntropyLossFunction) forward(y_pred *mat.Dense, y_true *mat.Dense
 		log.Fatalln("invalid row/sample size")
 		return nil
 	}
+}
+
+func (lf *CrossEntropyLossFunction) Backward(d_values *mat.Dense, y_true *mat.Dense) {
+	r, c := d_values.Dims()
+	r0, _ := y_true.Dims()
+
+	samples := r
+	labels := len(d_values.RawRowView(0))
+
+	if r0 == 1 {
+		y_true.CloneFrom(core.SparseToOHE(y_true, labels))
+	}
+
+	// negate y_true
+	y_true.Apply(func(i, j int, v float64) float64 {
+		return -v
+	}, y_true)
+
+	div_result := mat.NewDense(r, c, nil)
+	div_result.DivElem(y_true, d_values) // only works if the shapes a,b are same
+
+	div_result.Apply(func(i, j int, v float64) float64 {
+		return v / float64(samples)
+	}, div_result)
+
+	lf.D_Inputs = div_result
 }
