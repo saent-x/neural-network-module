@@ -18,7 +18,7 @@ func Calculate(outputs *mat.Dense, y *mat.Dense) float64 {
 		predictions.SetRow(index, []float64{float64(lo.IndexOf(row, lo.Max(row)))})
 	})
 
-	// check if class-targets are one-hot encoded - convert them
+	// check if class-targets are one-hot encoded - convert them to sparse data
 	c_rows, _ := y.Dims()
 	if c_rows > 1 {
 		OHE_class_targets := mat.NewDense(p_rows, 1, nil)
@@ -33,8 +33,8 @@ func Calculate(outputs *mat.Dense, y *mat.Dense) float64 {
 
 	pred_class_evaluation := mat.NewDense(p_rows, 1, nil)
 	// assign 1 where predictions == y, then find the cumulative mean
-	lo.ForEach(predictions.RawMatrix().Data, func(item float64, index int) {
-		val := lo.Ternary[float64](item == y.RawMatrix().Data[index], 1, 0)
+	lo.ForEach(predictions.RawMatrix().Data, func(prediction float64, index int) {
+		val := lo.Ternary[float64](prediction == y.RawMatrix().Data[index], 1, 0)
 		pred_class_evaluation.SetRow(index, []float64{val})
 	})
 

@@ -21,5 +21,4 @@ func TestAccuracyFunction_1(t *testing.T) {
 
 	fmt.Println("got: ", got)
 	fmt.Println("wanted: ", wanted)
-
 }
