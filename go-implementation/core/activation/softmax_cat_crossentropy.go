@@ -1,16 +1,19 @@
 package activation
 
 import (
+	"github.com/saent-x/ids-nn/core/layer"
 	"github.com/saent-x/ids-nn/core/loss"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
+	"math"
 )
 
 type SoftmaxCatCrossEntropy struct {
-	Activation *SoftMax
-	Loss       *loss.CrossEntropyLossFunction
-	Output     *mat.Dense
-	D_Inputs   *mat.Dense
+	Activation          *SoftMax
+	Loss                *loss.CrossEntropyLossFunction
+	Output              *mat.Dense
+	D_Inputs            *mat.Dense
+	Regularization_Loss float64
 }
 
 func CreateSoftmaxCatCrossEntropy() *SoftmaxCatCrossEntropy {
@@ -57,4 +60,41 @@ func (self *SoftmaxCatCrossEntropy) Backward(d_values *mat.Dense, y_true *mat.De
 	self.D_Inputs.Apply(func(i, j int, v float64) float64 {
 		return v / float64(samples)
 	}, self.D_Inputs)
+}
+
+func (lf *SoftmaxCatCrossEntropy) CalcRegularizationLoss(layer *layer.Layer) float64 {
+	lf.Regularization_Loss = 0
+
+	var abs_weights, abs_biases mat.Dense
+
+	abs_weights.Apply(func(i, j int, v float64) float64 {
+		return math.Abs(v)
+	}, layer.Weights)
+	abs_biases.Apply(func(i, j int, v float64) float64 {
+		return math.Abs(v)
+	}, layer.Weights)
+
+	if layer.Weight_Regularizer_L1 > 0 {
+		lf.Regularization_Loss += layer.Weight_Regularizer_L1 * mat.Sum(&abs_weights)
+	}
+
+	if layer.Weight_Regularizer_L2 > 0 {
+		var weights_by_weights mat.Dense
+
+		weights_by_weights.MulElem(layer.Weights, layer.Weights)
+		lf.Regularization_Loss += layer.Weight_Regularizer_L2 * mat.Sum(&weights_by_weights)
+	}
+
+	if layer.Biases_Regularizer_L1 > 0 {
+		lf.Regularization_Loss += layer.Biases_Regularizer_L1 * mat.Sum(&abs_biases)
+	}
+
+	if layer.Biases_Regularizer_L2 > 0 {
+		var biases_by_biases mat.Dense
+
+		biases_by_biases.MulElem(layer.Biases, layer.Biases)
+		lf.Regularization_Loss += layer.Biases_Regularizer_L2 * mat.Sum(&biases_by_biases)
+	}
+
+	return lf.Regularization_Loss
 }
