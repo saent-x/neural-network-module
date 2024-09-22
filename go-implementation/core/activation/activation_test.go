@@ -24,8 +24,8 @@ func TestActivationCreation(t *testing.T) {
 func TestActivationForwardFunction(t *testing.T) {
 	X, _ := core.SpiralData(100, 3)
 
-	layer_1 := layer.CreateLayer(2, 3)
-	layer_2 := layer.CreateLayer(3, 3)
+	layer_1 := layer.CreateLayer(2, 3, 0, 0, 0, 0)
+	layer_2 := layer.CreateLayer(3, 3, 0, 0, 0, 0)
 
 	activation_1 := new(ReLU)
 	activation_2 := new(SoftMax)
@@ -81,13 +81,13 @@ func TestBackwardFunction_1(t *testing.T) {
 	//X := mat.NewDense(3, 2, []float64{0.7, 0.2, 0.5, 0.1, 0.02, 0.9})
 	//y := mat.NewDense(1, 3, []float64{0, 1, 1})
 
-	layer_1 := layer.CreateLayer(2, 64)
-	layer_2 := layer.CreateLayer(64, 3)
+	layer_1 := layer.CreateLayer(2, 64, 0, 0, 0, 0)
+	layer_2 := layer.CreateLayer(64, 3, 0, 0, 0, 0)
 
 	activation_1 := new(ReLU)
 
 	loss_activation := CreateSoftmaxCatCrossEntropy()
-	optimizer := optimization.CreateStochasticGradientDescent(1.0)
+	optimizer := optimization.CreateStochasticGradientDescent(1.0, 0.0001, 0.9)
 
 	layer_1.Forward(X)
 	activation_1.Forward(layer_1.Output)
