@@ -1,40 +1,41 @@
 package activation
 
 import (
+	"github.com/saent-x/ids-nn/core/layer"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
 
 type SoftMax struct {
-	Output   *mat.Dense
-	D_Inputs *mat.Dense
+	layer.LayerCommons
+	layer.LayerNavigation
 }
 
 func (sm *SoftMax) Forward(inputs *mat.Dense) {
 	rows, columns := inputs.Dims()
 
-	exp_values := mat.NewDense(rows, columns, nil)
+	var exp_values mat.Dense
 	probabilities := mat.NewDense(rows, columns, nil)
 
 	// find max in each row
 	var max_in_rows []float64
-	lo.ForEach(lo.Range(rows), func(item int, index int) {
-		max_in_rows = append(max_in_rows, lo.Max(inputs.RawRowView(index)))
-	})
+	for i := 0; i < rows; i++ {
+		max_in_rows = append(max_in_rows, lo.Max(inputs.RawRowView(i)))
+	}
 
 	max_inputs := mat.NewDense(rows, 1, max_in_rows)
 	sub_inputs := mat.NewDense(rows, columns, nil)
 
 	// subtract col wise
-	lo.ForEach(lo.Range(columns), func(item int, index int) {
-		column := inputs.ColView(index)
+	for i := 0; i < columns; i++ {
+		column := inputs.ColView(i)
 		mx_column := max_inputs.ColView(0)
-		sub := mat.NewVecDense(rows, nil)
 
+		var sub mat.VecDense
 		sub.SubVec(column, mx_column)
-		sub_inputs.SetCol(index, sub.RawVector().Data)
-	})
+		sub_inputs.SetCol(i, sub.RawVector().Data)
+	}
 
 	// find exp of sub_inputs
 	exp_values.Apply(func(i, j int, v float64) float64 {
@@ -43,22 +44,23 @@ func (sm *SoftMax) Forward(inputs *mat.Dense) {
 
 	// find sum of each row in exp_values
 	var sum_exp_values []float64
-	lo.ForEach(lo.Range(rows), func(item int, index int) {
-		sum_exp_values = append(sum_exp_values, lo.Sum(exp_values.RawRowView(index)))
-	})
+	for i := 0; i < rows; i++ {
+		sum_exp_values = append(sum_exp_values, lo.Sum(exp_values.RawRowView(i)))
+	}
+
 	sum_exp := mat.NewDense(rows, 1, sum_exp_values)
 
 	// divide col wise
-	lo.ForEach(lo.Range(columns), func(item int, index int) {
+	for i := 0; i < columns; i++ {
 		sum_exp_column := sum_exp.ColView(0)
-		exp_values_column := exp_values.ColView(index)
-		div := mat.NewVecDense(rows, nil)
+		exp_values_column := exp_values.ColView(i)
 
+		var div mat.VecDense
 		div.DivElemVec(exp_values_column, sum_exp_column)
-		probabilities.SetCol(index, div.RawVector().Data)
-	})
+		probabilities.SetCol(i, div.RawVector().Data)
+	}
 
-	sm.Output = probabilities
+	sm.Output = mat.DenseCopyOf(probabilities)
 }
 
 func (sm *SoftMax) Backward(d_values *mat.Dense) {
@@ -68,22 +70,33 @@ func (sm *SoftMax) Backward(d_values *mat.Dense) {
 
 	r, _ := d_values.Dims()
 
-	for i, _ := range lo.Range(r) {
+	for i := 0; i < r; i++ {
 		raw_row := sm.Output.RawRowView(i)
-		single_output := mat.NewDense(len(raw_row), 1, raw_row)
 
-		_, c := single_output.T().Dims()
+		single_output := mat.NewDense(len(raw_row), 1, raw_row)
 		diag_flat := mat.NewDiagDense(single_output.RawMatrix().Rows, raw_row)
 
-		mul_single_output := mat.NewDense(single_output.RawMatrix().Rows, c, nil)
+		var mul_single_output, jacobian_matrix, result mat.Dense
+
 		mul_single_output.Mul(single_output, single_output.T())
-
-		jacobian_matrix := mat.NewDense(single_output.RawMatrix().Rows, single_output.RawMatrix().Rows, nil)
-		jacobian_matrix.Sub(diag_flat, mul_single_output)
-
-		var result mat.Dense
-		result.Mul(jacobian_matrix, d_values.RowView(i))
+		jacobian_matrix.Sub(diag_flat, &mul_single_output)
+		result.Mul(&jacobian_matrix, d_values.RowView(i))
 
 		sm.D_Inputs.SetRow(i, result.RawMatrix().Data)
 	}
+}
+
+func (sm *SoftMax) Predictions(outputs *mat.Dense) *mat.Dense {
+	rows := outputs.RawMatrix().Rows
+	argmax := mat.NewDense(1, rows, nil)
+
+	for i := 0; i < outputs.RawMatrix().Rows; i++ {
+		argmax.Set(0, i, float64(mat.Sum(outputs.RowView(i))))
+	}
+
+	return argmax
+}
+
+func (sm *SoftMax) GetOutput() *mat.Dense {
+	return sm.Output
 }
