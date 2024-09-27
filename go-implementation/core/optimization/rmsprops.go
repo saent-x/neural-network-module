@@ -7,23 +7,22 @@ import (
 )
 
 type RootMeanSquarePropagation struct {
-	LearningRate        float64
-	CurrentLearningRate float64
-	Decay               float64
-	Iterations          float64
-	Epsilon             float64
-	Rho                 float64
+	Optimizer
+	Epsilon float64
+	Rho     float64
 }
 
 func CreateRootMeanSquarePropagation(learning_rate float64, decay float64, epsilon float64, rho float64) *RootMeanSquarePropagation {
-	return &RootMeanSquarePropagation{
-		LearningRate:        learning_rate,
-		CurrentLearningRate: learning_rate,
-		Decay:               decay,
-		Iterations:          0.0,
-		Epsilon:             epsilon,
-		Rho:                 rho,
-	}
+	rmsp := new(RootMeanSquarePropagation)
+
+	rmsp.LearningRate = learning_rate
+	rmsp.CurrentLearningRate = learning_rate
+	rmsp.Decay = decay
+	rmsp.Iterations = 0.
+	rmsp.Epsilon = epsilon
+	rmsp.Rho = rho
+
+	return rmsp
 }
 
 func (self *RootMeanSquarePropagation) PreUpdateParams() {
@@ -33,11 +32,7 @@ func (self *RootMeanSquarePropagation) PreUpdateParams() {
 }
 
 func (self *RootMeanSquarePropagation) UpdateParams(layer *layer.Layer) {
-	r, c := layer.D_Weights.Dims()
-	r0, c0 := layer.D_Biases.Dims()
-
-	new_weights := mat.NewDense(r, c, nil)
-	new_biases := mat.NewDense(r0, c0, nil)
+	var new_weights, new_biases mat.Dense
 
 	if layer.Weights_Cache == nil || layer.Biases_Cache == nil {
 		layer.Weights_Cache = mat.DenseCopyOf(layer.Weights)
@@ -73,26 +68,19 @@ func (self *RootMeanSquarePropagation) UpdateParams(layer *layer.Layer) {
 		return -self.CurrentLearningRate * v
 	}, layer.D_Biases)
 
-	var weights_cache_sqrt, biases_cache_sqr, weights_epsilon_sum, biases_epsilon_sum mat.Dense
-
-	weights_cache_sqrt.Apply(func(i, j int, v float64) float64 {
-		return math.Sqrt(v)
-	}, layer.Weights_Cache)
-	biases_cache_sqr.Apply(func(i, j int, v float64) float64 {
-		return math.Sqrt(v)
-	}, layer.Biases_Cache)
+	var weights_epsilon_sum, biases_epsilon_sum mat.Dense
 
 	weights_epsilon_sum.Apply(func(i, j int, v float64) float64 {
-		return v + self.Epsilon
-	}, &weights_cache_sqrt)
+		return math.Sqrt(v) + self.Epsilon
+	}, layer.Weights_Cache)
 	biases_epsilon_sum.Apply(func(i, j int, v float64) float64 {
-		return v + self.Epsilon
-	}, &biases_cache_sqr)
+		return math.Sqrt(v) + self.Epsilon
+	}, layer.Biases_Cache)
 
 	var weights_div, biases_div mat.Dense
 
-	weights_div.DivElem(new_weights, &weights_epsilon_sum)
-	biases_div.DivElem(new_biases, &biases_epsilon_sum)
+	weights_div.DivElem(&new_weights, &weights_epsilon_sum)
+	biases_div.DivElem(&new_biases, &biases_epsilon_sum)
 
 	var weights_sum, biases_sum mat.Dense
 

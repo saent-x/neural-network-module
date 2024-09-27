@@ -7,21 +7,20 @@ import (
 )
 
 type AdaptiveGradient struct {
-	LearningRate        float64
-	CurrentLearningRate float64
-	Decay               float64
-	Iterations          float64
-	Epsilon             float64
+	Optimizer
+	Epsilon float64
 }
 
 func CreateAdaptiveGradient(learningRate float64, decay float64, epsilon float64) *AdaptiveGradient {
-	return &AdaptiveGradient{
-		LearningRate:        learningRate,
-		CurrentLearningRate: learningRate,
-		Decay:               decay,
-		Iterations:          0.0,
-		Epsilon:             epsilon,
-	}
+	ada_grad := new(AdaptiveGradient)
+
+	ada_grad.LearningRate = learningRate
+	ada_grad.CurrentLearningRate = learningRate
+	ada_grad.Decay = decay
+	ada_grad.Iterations = 0.0
+	ada_grad.Epsilon = epsilon
+
+	return ada_grad
 }
 
 func (self *AdaptiveGradient) PreUpdateParams() {
@@ -31,11 +30,7 @@ func (self *AdaptiveGradient) PreUpdateParams() {
 }
 
 func (self *AdaptiveGradient) UpdateParams(layer *layer.Layer) {
-	r, c := layer.D_Weights.Dims()
-	r0, c0 := layer.D_Biases.Dims()
-
-	new_weights := mat.NewDense(r, c, nil)
-	new_biases := mat.NewDense(r0, c0, nil)
+	var new_weights, new_biases mat.Dense
 
 	if layer.Weights_Cache == nil || layer.Biases_Cache == nil {
 		layer.Weights_Cache = mat.DenseCopyOf(layer.Weights)
@@ -64,26 +59,19 @@ func (self *AdaptiveGradient) UpdateParams(layer *layer.Layer) {
 		return -self.CurrentLearningRate * v
 	}, layer.D_Biases)
 
-	var weights_cache_sqrt, biases_cache_sqr, weights_epsilon_sum, biases_epsilon_sum mat.Dense
-
-	weights_cache_sqrt.Apply(func(i, j int, v float64) float64 {
-		return math.Sqrt(v)
-	}, layer.Weights_Cache)
-	biases_cache_sqr.Apply(func(i, j int, v float64) float64 {
-		return math.Sqrt(v)
-	}, layer.Biases_Cache)
+	var weights_epsilon_sum, biases_epsilon_sum mat.Dense
 
 	weights_epsilon_sum.Apply(func(i, j int, v float64) float64 {
-		return v + self.Epsilon
-	}, &weights_cache_sqrt)
+		return math.Sqrt(v) + self.Epsilon
+	}, layer.Weights_Cache)
 	biases_epsilon_sum.Apply(func(i, j int, v float64) float64 {
-		return v + self.Epsilon
-	}, &biases_cache_sqr)
+		return math.Sqrt(v) + self.Epsilon
+	}, layer.Biases_Cache)
 
 	var weights_div, biases_div mat.Dense
 
-	weights_div.DivElem(new_weights, &weights_epsilon_sum)
-	biases_div.DivElem(new_biases, &biases_epsilon_sum)
+	weights_div.DivElem(&new_weights, &weights_epsilon_sum)
+	biases_div.DivElem(&new_biases, &biases_epsilon_sum)
 
 	var weights_sum, biases_sum mat.Dense
 
