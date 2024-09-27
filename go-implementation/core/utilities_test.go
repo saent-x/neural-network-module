@@ -17,6 +17,15 @@ func TestSpiralData(t *testing.T) {
 	}
 }
 
+func TestPlotForSineData(t *testing.T) {
+	X, y := SineData(1000)
+	result := PlotSineData(X, y)
+
+	if !result {
+		t.Errorf("error: X & y spiral data is empty")
+	}
+}
+
 func TestVerticalData(t *testing.T) {
 	X, y := VerticalData(100, 3)
 
