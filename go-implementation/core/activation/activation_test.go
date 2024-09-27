@@ -94,7 +94,7 @@ func TestBackwardFunction_1(t *testing.T) {
 
 	layer_2.Forward(activation_1.Output)
 
-	loss_value := loss_activation.Forward(layer_2.Output, y)
+	loss_value := loss_activation.Calculate(layer_2.Output, y)
 	accuracy_ := accuracy.Calculate(loss_activation.Output, y)
 
 	fmt.Println("loss: ", loss_value)
