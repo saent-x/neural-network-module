@@ -1,20 +1,21 @@
 package activation
 
 import (
+	"github.com/saent-x/ids-nn/core/layer"
 	"gonum.org/v1/gonum/mat"
 )
 
 type ReLU struct {
-	Inputs   *mat.Dense
-	Output   *mat.Dense
-	D_Inputs *mat.Dense
+	Inputs *mat.Dense
+
+	layer.LayerCommons
+	layer.LayerNavigation
 }
 
 func (self *ReLU) Forward(inputs *mat.Dense) {
 	self.Inputs = mat.DenseCopyOf(inputs) // set inputs to be used for backpropagation
-	rows, columns := inputs.Dims()
 
-	output := mat.NewDense(rows, columns, nil)
+	var output mat.Dense
 	output.Apply(func(i, j int, value float64) float64 {
 		if value > 0 {
 			return value
@@ -22,7 +23,7 @@ func (self *ReLU) Forward(inputs *mat.Dense) {
 		return 0
 	}, inputs)
 
-	self.Output = mat.DenseCopyOf(output)
+	self.Output = mat.DenseCopyOf(&output)
 }
 
 func (self *ReLU) Backward(d_values *mat.Dense) {
@@ -33,4 +34,8 @@ func (self *ReLU) Backward(d_values *mat.Dense) {
 		}
 		return value
 	}, self.D_Inputs)
+}
+
+func (self *ReLU) GetOutput() *mat.Dense {
+	return self.Output
 }
