@@ -12,6 +12,7 @@ import (
 
 func TestForRegressionModel(t *testing.T) {
 	X, y := core.SineData(1000)
+
 	regression_model := New()
 
 	regression_model.Add(layer.MockRegressionLayer(1, 64, 0, 0, 0, 0))

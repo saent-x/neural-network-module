@@ -9,7 +9,7 @@ type DropoutLayer struct {
 	Rate       float64
 	Inputs     *mat.Dense
 	BinaryMask *mat.Dense
-	
+
 	LayerCommons
 
 	prev interface{}

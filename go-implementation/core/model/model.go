@@ -40,6 +40,7 @@ func (m *Model) Train(X, y *mat.Dense, epochs int, print_every int) {
 	m.Accuracy.Init(y, false)
 
 	for epoch := 0; epoch < epochs+1; epoch++ {
+
 		output := m.forward(X)
 
 		data_loss, regularization_loss := m.Lossfn.Calculate(output, y)
