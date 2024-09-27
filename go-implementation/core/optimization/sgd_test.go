@@ -20,8 +20,8 @@ import (
 func TestForNNOptimization_1(t *testing.T) {
 	X, y := core.SpiralData(100, 3)
 
-	layer_1 := layer.CreateLayer(2, 3)
-	layer_2 := layer.CreateLayer(3, 3)
+	layer_1 := layer.CreateLayer(2, 3, 0, 0, 0, 0)
+	layer_2 := layer.CreateLayer(3, 3, 0, 0, 0, 0)
 
 	activation_1 := new(activation.ReLU)
 	activation_2 := new(activation.SoftMax) // for the output layer
@@ -199,7 +199,7 @@ func TestBackPropagation_2(t *testing.T) {
 	X := mat.NewDense(4, 3, []float64{0.7, 0.1, 0.2, 0.1, 0.5, 0.4, 0.02, 0.9, 0.08, 0.02, 0.9, 0.08})
 	d_values := mat.NewDense(3, 3, []float64{1., 1., 1., 2., 2., 2., 3., 3., 3.})
 
-	layer_1 := layer.CreateLayer(3, 3)
+	layer_1 := layer.CreateLayer(3, 3, 0, 0, 0, 0)
 	layer_1.Forward(X)
 
 	layer_1.Backward(d_values)
