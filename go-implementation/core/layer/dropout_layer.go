@@ -9,9 +9,11 @@ type DropoutLayer struct {
 	Rate       float64
 	Inputs     *mat.Dense
 	BinaryMask *mat.Dense
-	Output     *mat.Dense
+	
+	LayerCommons
 
-	D_Inputs *mat.Dense
+	prev interface{}
+	next interface{}
 }
 
 func NewDropoutLayer(rate float64) *DropoutLayer {
@@ -21,7 +23,7 @@ func NewDropoutLayer(rate float64) *DropoutLayer {
 }
 
 func (l *DropoutLayer) Forward(inputs *mat.Dense) {
-	l.Inputs = inputs
+	l.Inputs = mat.DenseCopyOf(inputs)
 
 	rows, cols := inputs.Dims()
 	l.BinaryMask = mat.NewDense(rows, cols, nil)
@@ -45,8 +47,23 @@ func (l *DropoutLayer) Forward(inputs *mat.Dense) {
 
 func (l *DropoutLayer) Backward(d_values *mat.Dense) {
 	var new_dinputs mat.Dense
-
-	new_dinputs.Mul(d_values, l.BinaryMask)
+	new_dinputs.MulElem(d_values, l.BinaryMask)
 
 	l.D_Inputs = mat.DenseCopyOf(&new_dinputs)
+}
+
+func (self *DropoutLayer) GetPreviousLayer() interface{} {
+	return self.prev
+}
+
+func (self *DropoutLayer) GetNextLayer() interface{} {
+	return self.next
+}
+
+func (self *DropoutLayer) SetPreviousLayer(prev interface{}) {
+	self.prev = prev
+}
+
+func (self *DropoutLayer) SetNextLayer(next interface{}) {
+	self.next = next
 }
