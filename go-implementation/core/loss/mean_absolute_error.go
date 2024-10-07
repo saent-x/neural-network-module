@@ -11,14 +11,21 @@ type MeanAbsoluteError struct {
 	Loss
 }
 
-func (mae *MeanAbsoluteError) Calculate(output *mat.Dense, y *mat.Dense) (float64, float64) {
-	sample_losses := mae.Forward(output, y)
+func (meanAbsoluteError *MeanAbsoluteError) Calculate(output *mat.Dense, y *mat.Dense, include_regularization bool) (float64, float64) {
+	sample_losses := meanAbsoluteError.Forward(output, y)
 	average_loss := stat.Mean(sample_losses.RawVector().Data, nil)
 
-	return average_loss, mae.Regularization_Loss
+	meanAbsoluteError.AccumulatedSum += mat.Sum(sample_losses)
+	meanAbsoluteError.AccumulatedCount += float64(sample_losses.Len())
+
+	if !include_regularization {
+		return average_loss, 0
+	}
+
+	return average_loss, meanAbsoluteError.CalcRegularizationLoss()
 }
 
-func (mae *MeanAbsoluteError) Forward(y_true, y_pred *mat.Dense) *mat.VecDense {
+func (meanAbsoluteError *MeanAbsoluteError) Forward(y_true, y_pred *mat.Dense) *mat.VecDense {
 	var fn mat.Dense
 
 	fn.Sub(y_true, y_pred)
@@ -31,7 +38,7 @@ func (mae *MeanAbsoluteError) Forward(y_true, y_pred *mat.Dense) *mat.VecDense {
 	return sample_losses
 }
 
-func (mae *MeanAbsoluteError) Backward(d_values, y_true *mat.Dense) {
+func (meanAbsoluteError *MeanAbsoluteError) Backward(d_values, y_true *mat.Dense) {
 	samples := d_values.RawMatrix().Rows
 	outputs := len(d_values.RawRowView(0))
 
@@ -42,5 +49,5 @@ func (mae *MeanAbsoluteError) Backward(d_values, y_true *mat.Dense) {
 		return (core.Sign(v) / float64(outputs)) / float64(samples)
 	}, &fn)
 
-	mae.D_Inputs = &fn
+	meanAbsoluteError.D_Inputs = &fn
 }
