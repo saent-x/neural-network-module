@@ -25,14 +25,15 @@ func TestForNNOptimization_1(t *testing.T) {
 
 	activation_1 := new(activation.ReLU)
 	activation_2 := new(activation.SoftMax) // for the output layer
+	accuracy_ca := new(accuracy.CategoricalAccuracy)
 
-	lossfn_1 := new(loss.CrossEntropyLossFunction)
+	lossfn_1 := new(loss.CategoricalCrossEntropy)
 
-	layer_1.Forward(X)
-	activation_1.Forward(layer_1.Output)
+	layer_1.Forward(X, true)
+	activation_1.Forward(layer_1.Output, true)
 
-	layer_2.Forward(activation_1.Output)
-	activation_2.Forward(layer_2.Output)
+	layer_2.Forward(activation_1.Output, true)
+	activation_2.Forward(layer_2.Output, true)
 
 	// initial variables for optimizer
 	lowest_loss := 9999999.0
@@ -49,14 +50,14 @@ func TestForNNOptimization_1(t *testing.T) {
 		layer_2.Weights.Apply(generateRand, layer_2.Weights)
 		layer_2.Biases.Apply(generateRand, layer_2.Biases)
 
-		layer_1.Forward(X)
-		activation_1.Forward(layer_1.Output)
+		layer_1.Forward(X, true)
+		activation_1.Forward(layer_1.Output, true)
 
-		layer_2.Forward(activation_1.Output)
-		activation_2.Forward(layer_2.Output)
+		layer_2.Forward(activation_1.Output, true)
+		activation_2.Forward(layer_2.Output, true)
 
-		loss_value := lossfn_1.Calculate(activation_2.Output, y)
-		accuracy_ := accuracy.Calculate(activation_2.Output, y)
+		loss_value, _ := lossfn_1.Calculate(activation_2.Output, y, true)
+		accuracy_ := accuracy_ca.Calculate(activation_2.Output, y)
 
 		if loss_value < lowest_loss {
 			fmt.Println("New set of weights found, iteration: ", ix, "loss: ", loss_value, "accuracy: ", accuracy_)
@@ -200,7 +201,7 @@ func TestBackPropagation_2(t *testing.T) {
 	d_values := mat.NewDense(3, 3, []float64{1., 1., 1., 2., 2., 2., 3., 3., 3.})
 
 	layer_1 := layer.CreateLayer(3, 3, 0, 0, 0, 0)
-	layer_1.Forward(X)
+	layer_1.Forward(X, true)
 
 	layer_1.Backward(d_values)
 
