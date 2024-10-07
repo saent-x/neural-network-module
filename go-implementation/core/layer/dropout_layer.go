@@ -7,13 +7,10 @@ import (
 
 type DropoutLayer struct {
 	Rate       float64
-	Inputs     *mat.Dense
 	BinaryMask *mat.Dense
 
 	LayerCommons
-
-	prev interface{}
-	next interface{}
+	LayerNavigation
 }
 
 func NewDropoutLayer(rate float64) *DropoutLayer {
@@ -22,48 +19,37 @@ func NewDropoutLayer(rate float64) *DropoutLayer {
 	}
 }
 
-func (l *DropoutLayer) Forward(inputs *mat.Dense) {
-	l.Inputs = mat.DenseCopyOf(inputs)
+func (dropoutLayer *DropoutLayer) Forward(inputs *mat.Dense, training bool) {
+	dropoutLayer.Inputs = mat.DenseCopyOf(inputs)
+
+	if !training {
+		dropoutLayer.Output = mat.DenseCopyOf(inputs)
+		return
+	}
 
 	rows, cols := inputs.Dims()
-	l.BinaryMask = mat.NewDense(rows, cols, nil)
+	dropoutLayer.BinaryMask = mat.NewDense(rows, cols, nil)
 
-	binomial := distuv.Binomial{N: 1, P: l.Rate}
+	binomial := distuv.Binomial{N: 1, P: dropoutLayer.Rate}
 
-	l.BinaryMask.Apply(func(i, j int, v float64) float64 {
+	dropoutLayer.BinaryMask.Apply(func(i, j int, v float64) float64 {
 		// Generate binary value using binomial distribution (either 0 or 1)
 		maskValue := binomial.Rand()
 		if maskValue == 1 {
-			return 1.0 / l.Rate // Scale mask by 1 / rate
+			return 1.0 / dropoutLayer.Rate // Scale mask by 1 / rate
 		} else {
 			return 0
 		}
-	}, l.BinaryMask)
+	}, dropoutLayer.BinaryMask)
 
 	// Apply mask to inputs (element-wise multiplication)
-	l.Output = mat.NewDense(rows, cols, nil)
-	l.Output.MulElem(inputs, l.BinaryMask)
+	dropoutLayer.Output = mat.NewDense(rows, cols, nil)
+	dropoutLayer.Output.MulElem(inputs, dropoutLayer.BinaryMask)
 }
 
-func (l *DropoutLayer) Backward(d_values *mat.Dense) {
+func (dropoutLayer *DropoutLayer) Backward(d_values *mat.Dense) {
 	var new_dinputs mat.Dense
-	new_dinputs.MulElem(d_values, l.BinaryMask)
+	new_dinputs.MulElem(d_values, dropoutLayer.BinaryMask)
 
-	l.D_Inputs = mat.DenseCopyOf(&new_dinputs)
-}
-
-func (self *DropoutLayer) GetPreviousLayer() interface{} {
-	return self.prev
-}
-
-func (self *DropoutLayer) GetNextLayer() interface{} {
-	return self.next
-}
-
-func (self *DropoutLayer) SetPreviousLayer(prev interface{}) {
-	self.prev = prev
-}
-
-func (self *DropoutLayer) SetNextLayer(next interface{}) {
-	self.next = next
+	dropoutLayer.D_Inputs = mat.DenseCopyOf(&new_dinputs)
 }
