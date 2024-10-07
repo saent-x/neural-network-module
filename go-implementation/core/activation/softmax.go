@@ -3,6 +3,7 @@ package activation
 import (
 	"github.com/saent-x/ids-nn/core/layer"
 	"github.com/samber/lo"
+	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -12,7 +13,7 @@ type SoftMax struct {
 	layer.LayerNavigation
 }
 
-func (sm *SoftMax) Forward(inputs *mat.Dense) {
+func (softmax *SoftMax) Forward(inputs *mat.Dense, training bool) {
 	rows, columns := inputs.Dims()
 
 	var exp_values mat.Dense
@@ -60,18 +61,18 @@ func (sm *SoftMax) Forward(inputs *mat.Dense) {
 		probabilities.SetCol(i, div.RawVector().Data)
 	}
 
-	sm.Output = mat.DenseCopyOf(probabilities)
+	softmax.Output = mat.DenseCopyOf(probabilities)
 }
 
-func (sm *SoftMax) Backward(d_values *mat.Dense) {
+func (softmax *SoftMax) Backward(d_values *mat.Dense) {
 	//r, c := inputs.Dims()
-	sm.D_Inputs = mat.DenseCopyOf(d_values)
-	sm.D_Inputs.Zero() // empty
+	softmax.D_Inputs = mat.DenseCopyOf(d_values)
+	softmax.D_Inputs.Zero() // empty
 
 	r, _ := d_values.Dims()
 
 	for i := 0; i < r; i++ {
-		raw_row := sm.Output.RawRowView(i)
+		raw_row := softmax.Output.RawRowView(i)
 
 		single_output := mat.NewDense(len(raw_row), 1, raw_row)
 		diag_flat := mat.NewDiagDense(single_output.RawMatrix().Rows, raw_row)
@@ -82,21 +83,22 @@ func (sm *SoftMax) Backward(d_values *mat.Dense) {
 		jacobian_matrix.Sub(diag_flat, &mul_single_output)
 		result.Mul(&jacobian_matrix, d_values.RowView(i))
 
-		sm.D_Inputs.SetRow(i, result.RawMatrix().Data)
+		softmax.D_Inputs.SetRow(i, result.RawMatrix().Data)
 	}
 }
 
-func (sm *SoftMax) Predictions(outputs *mat.Dense) *mat.Dense {
+func (softmax *SoftMax) Predictions(outputs *mat.Dense) *mat.Dense {
 	rows := outputs.RawMatrix().Rows
 	argmax := mat.NewDense(1, rows, nil)
 
-	for i := 0; i < outputs.RawMatrix().Rows; i++ {
-		argmax.Set(0, i, float64(mat.Sum(outputs.RowView(i))))
+	for i := 0; i < rows; i++ {
+		max_in_row := floats.MaxIdx(outputs.RawRowView(i))
+		argmax.Set(0, i, float64(max_in_row))
 	}
 
 	return argmax
 }
 
-func (sm *SoftMax) GetOutput() *mat.Dense {
-	return sm.Output
+func (softmax *SoftMax) GetOutput() *mat.Dense {
+	return softmax.Output
 }
