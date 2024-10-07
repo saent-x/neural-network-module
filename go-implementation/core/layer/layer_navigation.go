@@ -1,22 +1,22 @@
 package layer
 
 type LayerNavigation struct {
-	prev interface{}
-	next interface{}
+	Prev interface{}
+	Next interface{}
 }
 
-func (self *LayerNavigation) GetPreviousLayer() interface{} {
-	return self.prev
+func (layerNavigation *LayerNavigation) GetPreviousLayer() interface{} {
+	return layerNavigation.Prev
 }
 
-func (self *LayerNavigation) GetNextLayer() interface{} {
-	return self.next
+func (layerNavigation *LayerNavigation) GetNextLayer() interface{} {
+	return layerNavigation.Next
 }
 
-func (self *LayerNavigation) SetPreviousLayer(prev interface{}) {
-	self.prev = prev
+func (layerNavigation *LayerNavigation) SetPreviousLayer(prev interface{}) {
+	layerNavigation.Prev = prev
 }
 
-func (self *LayerNavigation) SetNextLayer(next interface{}) {
-	self.next = next
+func (layerNavigation *LayerNavigation) SetNextLayer(next interface{}) {
+	layerNavigation.Next = next
 }

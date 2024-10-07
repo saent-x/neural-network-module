@@ -6,25 +6,23 @@ import (
 )
 
 type Linear struct {
-	Inputs *mat.Dense
-
 	layer.LayerCommons
 	layer.LayerNavigation
 }
 
-func (l *Linear) Forward(inputs *mat.Dense) {
-	l.Inputs = inputs
-	l.Output = inputs
+func (linear *Linear) Forward(inputs *mat.Dense, training bool) {
+	linear.Inputs = inputs
+	linear.Output = inputs
 }
 
-func (l *Linear) Backward(d_values *mat.Dense) {
-	l.D_Inputs = mat.DenseCopyOf(d_values)
+func (linear *Linear) Backward(d_values *mat.Dense) {
+	linear.D_Inputs = mat.DenseCopyOf(d_values)
 }
 
-func (l *Linear) GetOutput() *mat.Dense {
-	return l.Output
+func (linear *Linear) GetOutput() *mat.Dense {
+	return linear.Output
 }
 
-func (l *Linear) Predictions(outputs *mat.Dense) *mat.Dense {
+func (linear *Linear) Predictions(outputs *mat.Dense) *mat.Dense {
 	return outputs
 }
