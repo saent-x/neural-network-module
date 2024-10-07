@@ -3,4 +3,6 @@ go.sum
 .env
 ids-nn.test
 .prof
-misc.txt
+.txt
+datasets
+.gob
