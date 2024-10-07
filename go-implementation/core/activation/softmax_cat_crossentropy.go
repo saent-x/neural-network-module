@@ -1,35 +1,13 @@
 package activation
 
 import (
-	"github.com/saent-x/ids-nn/core/layer"
 	"github.com/saent-x/ids-nn/core/loss"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
 )
 
 type SoftmaxCatCrossEntropy struct {
-	Activation *SoftMax
-	CE_Loss    *loss.CrossEntropyLossFunction
-	Output     *mat.Dense
-
 	loss.Loss
-	layer.LayerNavigation
-}
-
-func CreateSoftmaxCatCrossEntropy() *SoftmaxCatCrossEntropy {
-	self := new(SoftmaxCatCrossEntropy)
-
-	self.Activation = new(SoftMax)
-	self.CE_Loss = new(loss.CrossEntropyLossFunction)
-
-	return self
-}
-
-func (self *SoftmaxCatCrossEntropy) Calculate(inputs *mat.Dense, y_true *mat.Dense) (float64, float64) {
-	self.Activation.Forward(inputs)
-	self.Output = self.Activation.Output
-
-	return self.CE_Loss.Calculate(self.Output, y_true)
 }
 
 func (self *SoftmaxCatCrossEntropy) Backward(d_values *mat.Dense, y_true *mat.Dense) {
@@ -60,8 +38,4 @@ func (self *SoftmaxCatCrossEntropy) Backward(d_values *mat.Dense, y_true *mat.De
 	self.D_Inputs.Apply(func(i, j int, v float64) float64 {
 		return v / float64(samples)
 	}, self.D_Inputs)
-}
-
-func (self *SoftmaxCatCrossEntropy) GetOutput() *mat.Dense {
-	return self.Output
 }
