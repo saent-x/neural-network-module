@@ -1,0 +1,9 @@
+go.mod
+go.sum
+.env
+ids-nn.test
+.prof
+datasets
+.gob
+git_
+misc.txt
