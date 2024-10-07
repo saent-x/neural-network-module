@@ -8,19 +8,26 @@ import (
 	"math"
 )
 
-type BinaryCrossEntropyLoss struct {
+type BinaryCrossEntropy struct {
 	//Regularization_Loss float64
 	Loss
 }
 
-func (b *BinaryCrossEntropyLoss) Calculate(output *mat.Dense, y *mat.Dense) (float64, float64) {
-	sample_losses := b.Forward(output, y)
+func (binaryCrossEntropy *BinaryCrossEntropy) Calculate(output *mat.Dense, y *mat.Dense, include_regularization bool) (float64, float64) {
+	sample_losses := binaryCrossEntropy.Forward(output, y)
 	average_loss := stat.Mean(sample_losses.RawVector().Data, nil)
 
-	return average_loss, b.Regularization_Loss
+	binaryCrossEntropy.AccumulatedSum += mat.Sum(sample_losses)
+	binaryCrossEntropy.AccumulatedCount += float64(sample_losses.Len())
+
+	if !include_regularization {
+		return average_loss, 0
+	}
+
+	return average_loss, binaryCrossEntropy.CalcRegularizationLoss()
 }
 
-func (b *BinaryCrossEntropyLoss) Forward(y_pred *mat.Dense, y_true *mat.Dense) *mat.VecDense {
+func (binaryCrossEntropy *BinaryCrossEntropy) Forward(y_pred *mat.Dense, y_true *mat.Dense) *mat.VecDense {
 	var y_pred_clipped mat.Dense
 	y_pred_clipped.Apply(func(i, j int, value float64) float64 {
 		return lo.Clamp(value, 1e-7, 1-1e-7)
@@ -52,7 +59,7 @@ func (b *BinaryCrossEntropyLoss) Forward(y_pred *mat.Dense, y_true *mat.Dense) *
 	return sample_losses
 }
 
-func (b *BinaryCrossEntropyLoss) Backward(d_values *mat.Dense, y_true *mat.Dense) {
+func (binaryCrossEntropy *BinaryCrossEntropy) Backward(d_values *mat.Dense, y_true *mat.Dense) {
 	samples := d_values.RawMatrix().Rows
 	outputs := len(d_values.RawRowView(0))
 
@@ -78,5 +85,5 @@ func (b *BinaryCrossEntropyLoss) Backward(d_values *mat.Dense, y_true *mat.Dense
 		return result / float64(samples)
 	}, &new_dinputs)
 
-	b.D_Inputs = mat.DenseCopyOf(&new_dinputs)
+	binaryCrossEntropy.D_Inputs = mat.DenseCopyOf(&new_dinputs)
 }
