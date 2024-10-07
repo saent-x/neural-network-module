@@ -6,14 +6,12 @@ import (
 )
 
 type ReLU struct {
-	Inputs *mat.Dense
-
 	layer.LayerCommons
 	layer.LayerNavigation
 }
 
-func (self *ReLU) Forward(inputs *mat.Dense) {
-	self.Inputs = mat.DenseCopyOf(inputs) // set inputs to be used for backpropagation
+func (relu *ReLU) Forward(inputs *mat.Dense, training bool) {
+	relu.Inputs = mat.DenseCopyOf(inputs) // set inputs to be used for backpropagation
 
 	var output mat.Dense
 	output.Apply(func(i, j int, value float64) float64 {
@@ -23,19 +21,19 @@ func (self *ReLU) Forward(inputs *mat.Dense) {
 		return 0
 	}, inputs)
 
-	self.Output = mat.DenseCopyOf(&output)
+	relu.Output = mat.DenseCopyOf(&output)
 }
 
-func (self *ReLU) Backward(d_values *mat.Dense) {
-	self.D_Inputs = mat.DenseCopyOf(d_values)
-	self.D_Inputs.Apply(func(i, j int, value float64) float64 {
-		if self.Inputs.At(i, j) <= 0 {
+func (relu *ReLU) Backward(d_values *mat.Dense) {
+	relu.D_Inputs = mat.DenseCopyOf(d_values)
+	relu.D_Inputs.Apply(func(i, j int, value float64) float64 {
+		if relu.Inputs.At(i, j) <= 0 {
 			return 0
 		}
 		return value
-	}, self.D_Inputs)
+	}, relu.D_Inputs)
 }
 
-func (self *ReLU) GetOutput() *mat.Dense {
-	return self.Output
+func (relu *ReLU) GetOutput() *mat.Dense {
+	return relu.Output
 }
