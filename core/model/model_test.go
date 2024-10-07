@@ -185,20 +185,6 @@ func TestModel_Predict(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		fmt.Printf("%f, ", testing_data.Y.At(0, i))
 	}
-
-	//fashionMNIST_labels := map[int]string{
-	//	0: "T-shirt/top",
-	//	1: "Trouser",
-	//	2: "Pullover",
-	//	3: "Dress",
-	//	4: "Coat",
-	//	5: "Sandal",
-	//	6: "Shirt",
-	//	7: "Sneaker",
-	//	8: "Bag",
-	//	9: "Ankle boot",
-	//}
-
 }
 
 func TestSavingModelFunc(t *testing.T) {
