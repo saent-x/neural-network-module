@@ -104,12 +104,7 @@ func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) 
 	return nil
 }
 
-func (modelDataProvider *ModelDataProvider) Load(filename string) (*Model, error) {
-	modelFile, err := os.Open(fmt.Sprintf("./saved_models/%v.json", filename))
-	if err != nil {
-		panic(err)
-	}
-	defer modelFile.Close()
+func (modelDataProvider *ModelDataProvider) Load(modelFile *os.File) (*Model, error) {
 
 	bytesData, err := io.ReadAll(modelFile)
 	if err != nil {

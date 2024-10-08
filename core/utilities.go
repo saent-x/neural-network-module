@@ -307,7 +307,10 @@ func SaveDataToSlice(dirs []os.DirEntry, dirPath string, shuffle bool) (*mat.Den
 			}
 
 			for _, i := range imgs {
-				X, y = readImage(i, imgsPath, f)
+				x_, y_ := readImage(i, imgsPath, f)
+
+				X = append(X, x_)
+				y = append(y, y_)
 			}
 		}
 	}
@@ -332,27 +335,22 @@ func SaveDataToSlice(dirs []os.DirEntry, dirPath string, shuffle bool) (*mat.Den
 	return X_mat, y_mat, nil
 }
 
-func readImage(i os.DirEntry, imgsPath string, f os.DirEntry) ([][]float64, []byte) {
-	var X [][]float64
-	var y []byte
-
+func readImage(i os.DirEntry, imgsPath string, f os.DirEntry) ([]float64, byte) {
 	if !i.IsDir() {
 		// read imgs and store in slice
-		imgBytes, err2 := ReadBytes(fmt.Sprintf("%s/%s", imgsPath, i.Name()), false, false)
+		X, err2 := ReadBytes(fmt.Sprintf("%s/%s", imgsPath, i.Name()), false, false)
 		if err2 != nil {
 			panic(err2)
 		}
 
-		X = append(X, imgBytes)
-
-		v, err3 := strconv.ParseUint(f.Name(), 10, 8)
+		y, err3 := strconv.ParseUint(f.Name(), 10, 8)
 		if err3 != nil {
 			panic(err3)
 		}
 
-		y = append(y, byte(v))
+		return X, byte(y)
 	}
-	return X, y
+	return nil, 0
 }
 
 func byteTofloat(b []byte) []float64 {
