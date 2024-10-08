@@ -380,6 +380,7 @@ func ReadBytes(imagePath string, invertColor bool, convertToGrayscale bool) ([]f
 	return ScaleValues(imgBytes, invertColor)
 }
 
+// this func is reference from nnfs_go by Roman Volkov
 func ConvertIntoGrayscale(src image.Image, width int, height int) image.Image {
 	dst := image.NewGray(image.Rect(0, 0, width, height))
 	draw.NearestNeighbor.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
@@ -464,6 +465,10 @@ func GetBatch[T datamodels.TrainingData | datamodels.ValidationData](data T, ste
 	}
 }
 
+func CreateDenseMatrix(rows int, cols int, data []float64) *mat.Dense {
+	return mat.NewDense(rows, cols, data)
+}
+
 func GetSingleBatch(X *mat.Dense, step, batchSize int) *mat.Dense {
 	rows, cols := X.Dims()
 
@@ -500,8 +505,4 @@ func getBatch(X *mat.Dense, y *mat.Dense, step, batchSize int) (*mat.Dense, *mat
 	batch_y := mat.DenseCopyOf(y.Slice(0, 1, start, end))
 
 	return batch_X, batch_y
-}
-
-func DeepCopyModel() {
-
 }
