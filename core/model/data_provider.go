@@ -123,8 +123,8 @@ func (modelDataProvider *ModelDataProvider) Load(filename string) (*Model, error
 	}
 
 	model := Model{}
-	// fill model layers
 
+	// fill model layers
 	for i := 0; i < len(retrievedModel.Layers); i++ {
 		layer_ := retrievedModel.Layers[i]
 

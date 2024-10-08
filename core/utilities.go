@@ -502,6 +502,6 @@ func getBatch(X *mat.Dense, y *mat.Dense, step, batchSize int) (*mat.Dense, *mat
 	return batch_X, batch_y
 }
 
-func DeepCopyModel() {
-
+func CreateDenseMatrix(rows, cols int, data []float64) *mat.Dense {
+	return mat.NewDense(rows, cols, data)
 }
