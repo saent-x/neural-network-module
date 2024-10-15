@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/accuracy"
 	"github.com/saent-x/ids-nn/core/activation"
 	"github.com/saent-x/ids-nn/core/layer"
@@ -20,12 +21,6 @@ type ModelDataProvider struct {
 }
 
 func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) error {
-	modelFile, err := os.Create(fmt.Sprintf("./saved_models/%v.json", filename))
-	if err != nil {
-		return err
-	}
-	defer modelFile.Close()
-
 	layers := make([]datawrappers.LayerWrapper, 0)
 	for i := 0; i < len(model.Layers); i++ {
 		modelLayer := model.Layers[i]
@@ -95,9 +90,13 @@ func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) 
 	}
 
 	d, err := json.MarshalIndent(modelWrapper, "", "  ")
-
-	_, err = modelFile.Write(d)
 	if err != nil {
+		return err
+	}
+
+	err = core.WriteJSONBytesToFile(d, fmt.Sprintf("./saved_models/%s.json", filename))
+	if err != nil {
+		fmt.Printf("Error writing JSON bytes to file: %v\n", err)
 		return err
 	}
 

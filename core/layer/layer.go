@@ -1,6 +1,7 @@
 package layer
 
 import (
+	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/datamodels"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
@@ -83,10 +84,14 @@ func (layer *Layer) Forward(inputs *mat.Dense, training bool) {
 		return value + layer.Biases.At(0, j)
 	}, &output)
 
+	core.ContainsNaN(&output)
+
 	layer.Output = mat.DenseCopyOf(&output)
 }
 
 func (layer *Layer) Backward(d_values *mat.Dense) {
+	core.ContainsNaN(d_values)
+
 	_, c := d_values.Dims()
 	inputs_T := layer.Inputs.T()
 	r0, _ := inputs_T.Dims()
@@ -95,6 +100,7 @@ func (layer *Layer) Backward(d_values *mat.Dense) {
 	layer.D_Weights = mat.NewDense(r0, c, nil)
 	layer.D_Weights.Mul(inputs_T, d_values)
 
+	core.ContainsNaN(layer.D_Weights)
 	// sum all cols in kd_values
 	//col-wise and retain dims
 	layer.D_Biases = mat.NewDense(1, c, nil)
@@ -147,6 +153,8 @@ func (layer *Layer) Backward(d_values *mat.Dense) {
 
 		layer.D_Biases.Add(layer.D_Biases, &new_dbiases)
 	}
+
+	core.ContainsNaN(layer.Weights)
 
 	var result mat.Dense
 	result.Mul(d_values, layer.Weights.T())

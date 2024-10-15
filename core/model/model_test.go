@@ -75,7 +75,7 @@ func TestCategoricalModel(t *testing.T) {
 
 	classification_model.Finalize()
 
-	classification_model.Train(datamodels.TrainingData{X, y}, datamodels.ValidationData{X_test, y_test}, 10000, 0, 100)
+	classification_model.Train(datamodels.TrainingData{X, y}, datamodels.ValidationData{X_test, y_test}, 2, 1000, 1000)
 }
 
 func TestFashionMISTModel(t *testing.T) {
@@ -83,24 +83,24 @@ func TestFashionMISTModel(t *testing.T) {
 
 	fashionMNIST_model := New()
 
-	fashionMNIST_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 128, 0, 0, 0, 0))
+	fashionMNIST_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 512, 0, 0, 0, 0))
 	fashionMNIST_model.Add(new(activation.ReLU))
 
-	fashionMNIST_model.Add(layer.CreateLayer(128, 128, 0, 0, 0, 0))
+	fashionMNIST_model.Add(layer.CreateLayer(512, 512, 0, 0, 0, 0))
 	fashionMNIST_model.Add(new(activation.ReLU))
 
-	fashionMNIST_model.Add(layer.CreateLayer(128, 10, 0, 0, 0, 0))
+	fashionMNIST_model.Add(layer.CreateLayer(512, 10, 0, 0, 0, 0))
 	fashionMNIST_model.Add(new(activation.SoftMax))
 
-	fashionMNIST_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-4, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	fashionMNIST_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
 
 	fashionMNIST_model.Finalize()
 
-	fashionMNIST_model.Train(training_data, testing_data, 10, 128, 100)
+	fashionMNIST_model.Train(training_data, testing_data, 1, 128, 100)
 
 	//fashionMNIST_model.SaveParameters("fashionMNIST_model")
 	modelDataProvider := new(ModelDataProvider)
-	modelDataProvider.Save("fashionMNIST_model_full", fashionMNIST_model)
+	modelDataProvider.Save("fashionMNIST_model_full_2", fashionMNIST_model)
 }
 
 func TestFashionMISTModelParametersFromFile(t *testing.T) {
@@ -123,6 +123,37 @@ func TestFashionMISTModelParametersFromFile(t *testing.T) {
 	fashionMNIST_model.LoadParameters("fashionMNIST_model")
 
 	fashionMNIST_model.Evaluate(testing_data, 0)
+}
+
+func TestCANDatasetTraining(t *testing.T) {
+	training_data, testing_data := datasets.LoadCANDataset(false)
+
+	CAN_dataset_model := New()
+
+	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 512, 0, 0, 0, 0))
+	CAN_dataset_model.Add(new(activation.ReLU))
+
+	//CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
+
+	CAN_dataset_model.Add(layer.CreateLayer(512, 512, 0, 0, 0, 0))
+	CAN_dataset_model.Add(new(activation.ReLU))
+
+	CAN_dataset_model.Add(layer.CreateLayer(512, 2, 0, 0, 0, 0))
+	CAN_dataset_model.Add(new(activation.SoftMax))
+
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+
+	CAN_dataset_model.Finalize()
+	CAN_dataset_model.Train(training_data, testing_data, 5, 32, 100)
+
+	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
+
+	modelDataProvider := new(ModelDataProvider)
+	err := modelDataProvider.Save("CAN_dataset_model_full", CAN_dataset_model)
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestFashionMISTModelFromFile(t *testing.T) {

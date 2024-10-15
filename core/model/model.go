@@ -11,6 +11,7 @@ import (
 	"github.com/saent-x/ids-nn/core/optimization"
 	"github.com/saent-x/ids-nn/core/serializer"
 	"gonum.org/v1/gonum/mat"
+	"slices"
 )
 
 type Model struct {
@@ -116,9 +117,18 @@ func (model *Model) forward(X *mat.Dense, training bool) *mat.Dense {
 
 	var output *mat.Dense
 	for i := 0; i < len(model.Layers); i++ {
+		if i == 5 {
+			fmt.Println("strike time")
+		}
 		// since only the prev layer is called it shouldn't affect the loss func as the next layer to the last layer
 		model.Layers[i].(layer.ILayer).Forward(model.Layers[i].(layer.ILayer).GetPreviousLayer().(layer.ILayer).GetOutput(), training)
 		output = model.Layers[i].(layer.ILayer).GetOutput()
+
+		for idx := 0; idx < output.RawMatrix().Rows; idx++ {
+			if i == 5 && slices.Contains(output.RawRowView(idx), 1) {
+				fmt.Println("in here")
+			}
+		}
 	}
 
 	return output
@@ -142,9 +152,11 @@ func (model *Model) Backward(output, y *mat.Dense) {
 
 	for i := len(model.Layers) - 1; i >= 0; i-- {
 		if i == len(model.Layers)-1 {
-			model.Layers[i].(layer.ILayer).Backward(model.Lossfn.GetDInputs())
+			a := model.Lossfn.GetDInputs()
+			model.Layers[i].(layer.ILayer).Backward(a)
 		} else {
-			model.Layers[i].(layer.ILayer).Backward(model.Layers[i].(layer.ILayer).GetNextLayer().(layer.ILayer).GetDInputs())
+			b := model.Layers[i].(layer.ILayer).GetNextLayer().(layer.ILayer).GetDInputs()
+			model.Layers[i].(layer.ILayer).Backward(b)
 		}
 	}
 }

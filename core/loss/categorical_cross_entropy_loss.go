@@ -1,6 +1,7 @@
 package loss
 
 import (
+	"fmt"
 	"github.com/saent-x/ids-nn/core"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
@@ -69,6 +70,17 @@ func (categoricalCrossEntropy *CategoricalCrossEntropy) Forward(y_pred *mat.Dens
 }
 
 func (categoricalCrossEntropy *CategoricalCrossEntropy) Backward(d_values *mat.Dense, y_true *mat.Dense) {
+	fmt.Println()
+	fmt.Println("-------------------------------------------------------------")
+	fmt.Println("y_true (initial): ")
+	fmt.Println(mat.Formatted(y_true))
+
+	y_true_clone := mat.DenseCopyOf(y_true)
+	d_values_clone := mat.DenseCopyOf(d_values)
+
+	fmt.Println(y_true_clone.RawMatrix().Rows)
+	fmt.Println(d_values_clone.RawMatrix().Cols)
+
 	samples := d_values.RawMatrix().Rows
 	labels := len(d_values.RawRowView(0))
 
@@ -81,11 +93,29 @@ func (categoricalCrossEntropy *CategoricalCrossEntropy) Backward(d_values *mat.D
 		return -v
 	}, y_true)
 
+	fmt.Println()
+	fmt.Println("y_true (negated): ")
+	fmt.Println(mat.Formatted(y_true))
+
+	fmt.Println()
+	fmt.Println("d_values: ")
+	fmt.Println(mat.Formatted(d_values))
+
 	var div_result mat.Dense
 	div_result.DivElem(y_true, d_values) // only works if the shapes a,b are same
+
+	fmt.Println()
+	fmt.Println("div_result (y_true/d_values): ")
+	fmt.Println(mat.Formatted(&div_result))
+
 	div_result.Apply(func(i, j int, v float64) float64 {
 		return v / float64(samples)
 	}, &div_result)
+	fmt.Println()
+	fmt.Println("div_result (div_result/samples): ")
+	fmt.Println(mat.Formatted(&div_result))
+
+	core.ContainsNaN(&div_result)
 
 	categoricalCrossEntropy.D_Inputs = &div_result
 }

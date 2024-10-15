@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bufio"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/saent-x/ids-nn/core/datamodels"
@@ -20,7 +22,10 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -335,6 +340,115 @@ func SaveDataToSlice(dirs []os.DirEntry, dirPath string, shuffle bool) (*mat.Den
 	return X_mat, y_mat, nil
 }
 
+func ContainsNaN(val *mat.Dense) {
+	rows, cols := val.Dims()
+
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			if math.IsNaN(val.At(i, j)) {
+				fmt.Println("possible culprit!!")
+				break
+			}
+		}
+	}
+}
+
+func SubtractUnevenMatrices(A, B *mat.Dense) *mat.Dense {
+	rowsA, colsA := A.Dims()
+	rowsB, colsB := B.Dims()
+
+	if rowsA != rowsB || colsB != 1 {
+		panic("Matrix dimensions do not match for broadcasting")
+	}
+
+	// Create a result matrix with the same dimensions as A
+	result := mat.NewDense(rowsA, colsA, nil)
+
+	// Subtract B from A, broadcasting B across columns
+	for i := 0; i < rowsA; i++ {
+		for j := 0; j < colsA; j++ {
+			// Subtract corresponding element from B (broadcasted across columns)
+			result.Set(i, j, A.At(i, j)-B.At(i, 0))
+		}
+	}
+
+	return result
+}
+
+func DivideUnevenMatrices(A, B *mat.Dense) *mat.Dense {
+	rowsA, colsA := A.Dims()
+	rowsB, colsB := B.Dims()
+
+	if rowsA != rowsB || colsB != 1 {
+		panic("Matrix dimensions do not match for broadcasting")
+	}
+
+	// Create a result matrix with the same dimensions as A
+	result := mat.NewDense(rowsA, colsA, nil)
+
+	// Subtract B from A, broadcasting B across columns
+	for i := 0; i < rowsA; i++ {
+		for j := 0; j < colsA; j++ {
+			// Divide corresponding element from B (broadcasted across columns)
+			a1 := A.At(i, j)
+			b1 := B.At(i, 0)
+
+			s1 := a1 - b1
+
+			if s1 == 1 || s1 == 0 {
+				fmt.Println("in here")
+			}
+
+			result.Set(i, j, A.At(i, j)/B.At(i, 0))
+		}
+	}
+
+	return result
+}
+
+func WriteJSONBytesToFile(data []byte, filename string) error {
+	// Create or truncate the file
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("error creating file: %v", err)
+	}
+	defer file.Close()
+
+	// Create a buffered writer
+	bufferSize := 4 * 1024 * 1024 // 4MB buffer
+	writer := bufio.NewWriterSize(file, bufferSize)
+
+	// Write data in chunks
+	chunkSize := 1 * 1024 * 1024 // 1MB chunks
+	for i := 0; i < len(data); i += chunkSize {
+		end := i + chunkSize
+		if end > len(data) {
+			end = len(data)
+		}
+
+		_, err := writer.Write(data[i:end])
+		if err != nil {
+			return fmt.Errorf("error writing chunk to file: %v", err)
+		}
+
+		// Flush the buffer every few chunks to free up memory
+		if i%(chunkSize*10) == 0 {
+			err = writer.Flush()
+			if err != nil {
+				return fmt.Errorf("error flushing buffer: %v", err)
+			}
+		}
+	}
+
+	// Final flush to ensure all data is written
+	err = writer.Flush()
+	if err != nil {
+		return fmt.Errorf("error on final flush: %v", err)
+	}
+
+	return nil
+}
+
 func readImage(i os.DirEntry, imgsPath string, f os.DirEntry) ([]float64, byte) {
 	if !i.IsDir() {
 		// read imgs and store in slice
@@ -432,6 +546,63 @@ func NormalizeGrascaleImageData(img image.Image, invertColor bool) ([]float64, e
 	}
 
 	return data, nil
+}
+
+func GetDistinctValues(slice []float64) []float64 {
+	// Create a map to store unique values
+	uniqueMap := make(map[float64]bool)
+
+	// Iterate through the slice and add each value to the map
+	for _, value := range slice {
+		uniqueMap[value] = true
+	}
+
+	// Create a slice to store the unique values
+	uniqueSlice := make([]float64, 0, len(uniqueMap))
+
+	// Add all keys from the map to the slice
+	for value := range uniqueMap {
+		uniqueSlice = append(uniqueSlice, value)
+	}
+
+	// Sort the slice for consistent output
+	sort.Float64s(uniqueSlice)
+
+	return uniqueSlice
+}
+
+func cleanHexString(hexStr string) string {
+	// Remove "0x" prefix if present
+	hexStr = strings.TrimPrefix(hexStr, "0x")
+
+	// Remove any non-hexadecimal characters
+	re := regexp.MustCompile("[^0-9A-Fa-f]")
+	hexStr = re.ReplaceAllString(hexStr, "")
+
+	// Ensure the hex string is 16 characters (64 bits)
+	for len(hexStr) < 16 {
+		hexStr = "0" + hexStr
+	}
+	return hexStr[:16] // Truncate if longer than 16 characters
+}
+
+func HexToFloat64(hexStr string) (float64, error) {
+	cleanedHex := cleanHexString(hexStr)
+
+	// Decode hex string to bytes
+	bytes, err := hex.DecodeString(cleanedHex)
+	if err != nil {
+		return 0, fmt.Errorf("failed to decode hex string: %v", err)
+	}
+
+	// Convert bytes to uint64
+	bits := uint64(0)
+	for i, b := range bytes {
+		bits |= uint64(b) << (56 - 8*i)
+	}
+
+	// Convert uint64 to float64
+	return math.Float64frombits(bits), nil
 }
 
 func ShuffleSlice[T any](slice []T) []T {

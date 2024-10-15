@@ -33,7 +33,3 @@ func (relu *ReLU) Backward(d_values *mat.Dense) {
 		return value
 	}, relu.D_Inputs)
 }
-
-func (relu *ReLU) GetOutput() *mat.Dense {
-	return relu.Output
-}

@@ -1,6 +1,7 @@
 package activation
 
 import (
+	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/layer"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/floats"
@@ -14,10 +15,11 @@ type SoftMax struct {
 }
 
 func (softmax *SoftMax) Forward(inputs *mat.Dense, training bool) {
+	softmax.Inputs = inputs
+
 	rows, columns := inputs.Dims()
 
 	var exp_values mat.Dense
-	probabilities := mat.NewDense(rows, columns, nil)
 
 	// find max in each row
 	var max_in_rows []float64
@@ -28,15 +30,7 @@ func (softmax *SoftMax) Forward(inputs *mat.Dense, training bool) {
 	max_inputs := mat.NewDense(rows, 1, max_in_rows)
 	sub_inputs := mat.NewDense(rows, columns, nil)
 
-	// subtract col wise
-	for i := 0; i < columns; i++ {
-		column := inputs.ColView(i)
-		mx_column := max_inputs.ColView(0)
-
-		var sub mat.VecDense
-		sub.SubVec(column, mx_column)
-		sub_inputs.SetCol(i, sub.RawVector().Data)
-	}
+	sub_inputs = mat.DenseCopyOf(core.SubtractUnevenMatrices(inputs, max_inputs))
 
 	// find exp of sub_inputs
 	exp_values.Apply(func(i, j int, v float64) float64 {
@@ -51,21 +45,12 @@ func (softmax *SoftMax) Forward(inputs *mat.Dense, training bool) {
 
 	sum_exp := mat.NewDense(rows, 1, sum_exp_values)
 
-	// divide col wise
-	for i := 0; i < columns; i++ {
-		sum_exp_column := sum_exp.ColView(0)
-		exp_values_column := exp_values.ColView(i)
+	result := core.DivideUnevenMatrices(&exp_values, sum_exp)
 
-		var div mat.VecDense
-		div.DivElemVec(exp_values_column, sum_exp_column)
-		probabilities.SetCol(i, div.RawVector().Data)
-	}
-
-	softmax.Output = mat.DenseCopyOf(probabilities)
+	softmax.Output = mat.DenseCopyOf(result)
 }
 
 func (softmax *SoftMax) Backward(d_values *mat.Dense) {
-	//r, c := inputs.Dims()
 	softmax.D_Inputs = mat.DenseCopyOf(d_values)
 	softmax.D_Inputs.Zero() // empty
 
