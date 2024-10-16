@@ -8,3 +8,8 @@ git_
 misc.txt
 *.png
 vendor
+.idea
+*.csv
+*.json
+*.xml
+*.prof

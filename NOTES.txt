@@ -1,0 +1,16 @@
+1. Write individual funcs to read CSV folder and a flag to swap "1" for another value
+2. Then merge all sets together
+
+dataset
+
+classification
+    - accessory & attack-free => 0
+    - combined-attacks => 1
+    - DoS => 2
+    - Fuzzing => 3
+    - Gear => 4
+    - Interval => 5
+    - RPM => 6
+    - Speed => 7
+    - Standstill => 8
+    - Systematic => 9
