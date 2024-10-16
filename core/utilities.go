@@ -3,6 +3,7 @@ package core
 import (
 	"bufio"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/saent-x/ids-nn/core/datamodels"
@@ -390,20 +391,30 @@ func DivideUnevenMatrices(A, B *mat.Dense) *mat.Dense {
 	for i := 0; i < rowsA; i++ {
 		for j := 0; j < colsA; j++ {
 			// Divide corresponding element from B (broadcasted across columns)
-			a1 := A.At(i, j)
-			b1 := B.At(i, 0)
-
-			s1 := a1 - b1
-
-			if s1 == 1 || s1 == 0 {
-				fmt.Println("in here")
-			}
-
 			result.Set(i, j, A.At(i, j)/B.At(i, 0))
 		}
 	}
 
 	return result
+}
+
+func EncodeStructToJSON(d interface{}, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // Pretty-print with 2 spaces of indentation
+
+	// Encode the struct and write to file directly
+	err = encoder.Encode(d)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func WriteJSONBytesToFile(data []byte, filename string) error {

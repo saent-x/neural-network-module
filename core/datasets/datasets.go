@@ -15,7 +15,7 @@ import (
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-partial-sm")
+	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-full-001")
 	if err != nil {
 		panic(err)
 	}
@@ -29,12 +29,12 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 		for i := 0; i < X_mat.RawMatrix().Rows; i++ {
 			idx := shuffledIdxs[i]
 			X_mat.SetRow(idx, x[i])
-			Y_mat.Set(0, idx, float64(y[i]))
+			Y_mat.Set(0, idx, y[i])
 		}
 	} else {
 		for i := 0; i < X_mat.RawMatrix().Rows; i++ {
 			X_mat.SetRow(i, x[i])
-			Y_mat.Set(0, i, float64(y[i]))
+			Y_mat.Set(0, i, y[i])
 		}
 	}
 
@@ -44,7 +44,7 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-partial-sm")
+	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
 	if err != nil {
 		panic(err)
 	}
@@ -74,7 +74,6 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 
 func ScaleValues(matrix *mat.Dense) error {
 	_, cols := matrix.Dims()
-	//newMatrix := mat.NewDense(rows, cols, nil)
 
 	for i := 0; i < cols; i++ {
 		col := matrix.ColView(i)
@@ -96,31 +95,6 @@ func ScaleValues(matrix *mat.Dense) error {
 
 func checkLabel(folder string) (float64, error) {
 	// TODO: needs to be updated to reflect actual classes after tests
-	//switch folder {
-	//case "attack-free":
-	//	return 0., nil
-	//case "combined-attacks":
-	//	return 1., nil
-	//case "DoS-attacks":
-	//	return 2., nil
-	//case "fuzzing-attacks":
-	//	return 3., nil
-	//case "gear-attacks":
-	//	return 4., nil
-	//case "interval-attacks":
-	//	return 5., nil
-	//case "rpm-attacks":
-	//	return 6., nil
-	//case "speed-attacks":
-	//	return 7., nil
-	//case "standstill-attacks":
-	//	return 8., nil
-	//case "systematic-attacks":
-	//	return 9., nil
-	//default:
-	//	return 0, errors.New("invalid folder!")
-	//}
-
 	switch folder {
 	case "attack-free":
 		return 0., nil
@@ -128,11 +102,36 @@ func checkLabel(folder string) (float64, error) {
 		return 1., nil
 	case "DoS-attacks":
 		return 2., nil
-	case "gear-attacks":
+	case "fuzzing-attacks":
 		return 3., nil
+	case "gear-attacks":
+		return 4., nil
+	case "interval-attacks":
+		return 5., nil
+	case "rpm-attacks":
+		return 6., nil
+	case "speed-attacks":
+		return 7., nil
+	case "standstill-attacks":
+		return 8., nil
+	case "systematic-attacks":
+		return 9., nil
 	default:
 		return 0, errors.New("invalid folder!")
 	}
+
+	//switch folder {
+	//case "attack-free":
+	//	return 0., nil
+	//case "combined-attacks":
+	//	return 1., nil
+	//case "DoS-attacks":
+	//	return 2., nil
+	//case "gear-attacks":
+	//	return 3., nil
+	//default:
+	//	return 0, errors.New("invalid folder!")
+	//}
 }
 
 func ReadCAN_Folder(folderPath string) ([][]float64, []float64, error) {

@@ -1,7 +1,6 @@
 package optimization
 
 import (
-	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/layer"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -36,7 +35,6 @@ func (self *AdaptiveMomentum) PreUpdateParams() {
 }
 
 func (self *AdaptiveMomentum) UpdateParams(layer *layer.Layer) {
-	core.ContainsNaN(layer.D_Weights)
 	var new_weights, new_biases mat.Dense
 
 	if layer.Weights_Cache == nil || layer.Biases_Cache == nil {

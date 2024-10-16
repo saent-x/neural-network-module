@@ -12,7 +12,7 @@ import (
 	datawrappers "github.com/saent-x/ids-nn/core/model/data_wrappers"
 	"github.com/saent-x/ids-nn/core/optimization"
 	"gonum.org/v1/gonum/mat"
-	"io"
+	"log"
 	"os"
 	"reflect"
 )
@@ -89,12 +89,12 @@ func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) 
 		optimizer,
 	}
 
-	d, err := json.MarshalIndent(modelWrapper, "", "  ")
-	if err != nil {
-		return err
-	}
+	//d, err := json.MarshalIndent(modelWrapper, "", "  ")
+	//if err != nil {
+	//	return err
+	//}
 
-	err = core.WriteJSONBytesToFile(d, fmt.Sprintf("./saved_models/%s.json", filename))
+	err := core.EncodeStructToJSON(modelWrapper, fmt.Sprintf("./saved_models/%s.json", filename))
 	if err != nil {
 		fmt.Printf("Error writing JSON bytes to file: %v\n", err)
 		return err
@@ -103,17 +103,21 @@ func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) 
 	return nil
 }
 
-func (modelDataProvider *ModelDataProvider) Load(modelFile *os.File) (*Model, error) {
+func (modelDataProvider *ModelDataProvider) Load(filename string) (*Model, error) {
 
-	bytesData, err := io.ReadAll(modelFile)
+	file, err := os.Open(fmt.Sprintf("./saved_models/%s.json", filename))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	defer file.Close()
 
 	var retrievedModel datawrappers.ModelWrapper
-	err = json.Unmarshal(bytesData, &retrievedModel)
+
+	// Use json.NewDecoder to stream-read the JSON from the file
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&retrievedModel)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to decode JSON: %v", err)
 	}
 
 	model := Model{}

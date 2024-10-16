@@ -12,7 +12,6 @@ import (
 	"github.com/saent-x/ids-nn/core/mock"
 	"github.com/saent-x/ids-nn/core/optimization"
 	"gonum.org/v1/gonum/mat"
-	"os"
 	"testing"
 )
 
@@ -100,7 +99,7 @@ func TestFashionMISTModel(t *testing.T) {
 
 	//fashionMNIST_model.SaveParameters("fashionMNIST_model")
 	modelDataProvider := new(ModelDataProvider)
-	modelDataProvider.Save("fashionMNIST_model_full_2", fashionMNIST_model)
+	modelDataProvider.Save("fashionMNIST_model_full_3", fashionMNIST_model)
 }
 
 func TestFashionMISTModelParametersFromFile(t *testing.T) {
@@ -120,7 +119,7 @@ func TestFashionMISTModelParametersFromFile(t *testing.T) {
 	fashionMNIST_model.Set(new(loss.CategoricalCrossEntropy), nil, new(accuracy.CategoricalAccuracy))
 
 	fashionMNIST_model.Finalize()
-	fashionMNIST_model.LoadParameters("fashionMNIST_model")
+	fashionMNIST_model.LoadParameters("fashionMNIST_model_full_3")
 
 	fashionMNIST_model.Evaluate(testing_data, 0)
 }
@@ -130,21 +129,21 @@ func TestCANDatasetTraining(t *testing.T) {
 
 	CAN_dataset_model := New()
 
-	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 512, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 896, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	//CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
+	CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
 
-	CAN_dataset_model.Add(layer.CreateLayer(512, 512, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	CAN_dataset_model.Add(layer.CreateLayer(512, 2, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
 	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
-	CAN_dataset_model.Train(training_data, testing_data, 5, 32, 100)
+	CAN_dataset_model.Train(training_data, testing_data, 10, 2000, 10000)
 
 	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
 
@@ -161,13 +160,7 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 
 	modelDataProvider := new(ModelDataProvider)
 
-	modelFile, err := os.Open(fmt.Sprintf("./saved_models/%v.json", "fashionMNIST_model_full"))
-	if err != nil {
-		panic(err)
-	}
-	defer modelFile.Close()
-
-	model, err := modelDataProvider.Load(modelFile)
+	model, err := modelDataProvider.Load("fashionMNIST_model_full_3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,14 +172,7 @@ func TestModelInference(t *testing.T) {
 	image_data := datasets.LoadFashionMNISTDatasetForInference(false)
 
 	modelDataProvider := new(ModelDataProvider)
-
-	modelFile, err := os.Open(fmt.Sprintf("./saved_models/%v.json", "fashionMNIST_model_full"))
-	if err != nil {
-		panic(err)
-	}
-	defer modelFile.Close()
-
-	model, err := modelDataProvider.Load(modelFile)
+	model, err := modelDataProvider.Load("fashionMNIST_model_full")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,13 +205,7 @@ func TestModel_Predict(t *testing.T) {
 
 	modelDataProvider := new(ModelDataProvider)
 
-	modelFile, err := os.Open(fmt.Sprintf("./saved_models/%v.json", "fashionMNIST_model_full"))
-	if err != nil {
-		panic(err)
-	}
-	defer modelFile.Close()
-
-	model, err := modelDataProvider.Load(modelFile)
+	model, err := modelDataProvider.Load("fashionMNIST_model_full")
 	if err != nil {
 		t.Fatal(err)
 	}
