@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/accuracy"
 	"github.com/saent-x/ids-nn/core/activation"
@@ -12,7 +14,6 @@ import (
 	"github.com/saent-x/ids-nn/core/mock"
 	"github.com/saent-x/ids-nn/core/optimization"
 	"gonum.org/v1/gonum/mat"
-	"testing"
 )
 
 func TestRegressionModel(t *testing.T) {
@@ -125,7 +126,7 @@ func TestFashionMISTModelParametersFromFile(t *testing.T) {
 }
 
 func TestCANDatasetTraining(t *testing.T) {
-	training_data, testing_data := datasets.LoadCANDataset(false)
+	training_data, testing_data := datasets.LoadCANDataset(true)
 
 	CAN_dataset_model := New()
 
@@ -137,18 +138,18 @@ func TestCANDatasetTraining(t *testing.T) {
 	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 10, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
 	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
-	CAN_dataset_model.Train(training_data, testing_data, 10, 2000, 10000)
+	CAN_dataset_model.Train(training_data, testing_data, 10, 2000, 5000)
 
 	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
 
 	modelDataProvider := new(ModelDataProvider)
-	err := modelDataProvider.Save("CAN_dataset_model_full", CAN_dataset_model)
+	err := modelDataProvider.Save("CAN_dataset_model_full_shuffled", CAN_dataset_model)
 
 	if err != nil {
 		panic(err)

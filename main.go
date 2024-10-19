@@ -6,6 +6,14 @@ import (
 	"log"
 	"math"
 	"strconv"
+
+	"github.com/saent-x/ids-nn/core/accuracy"
+	"github.com/saent-x/ids-nn/core/activation"
+	"github.com/saent-x/ids-nn/core/datasets"
+	"github.com/saent-x/ids-nn/core/layer"
+	"github.com/saent-x/ids-nn/core/loss"
+	"github.com/saent-x/ids-nn/core/model"
+	"github.com/saent-x/ids-nn/core/optimization"
 )
 
 func main() {
@@ -15,7 +23,7 @@ func main() {
 	}
 	fmt.Println("19D -> ", float64(flValue))
 
-	flValue2, err := strconv.ParseUint("C0003FFD000000FF", 16, 64)
+	flValue2, err := strconv.ParseUint("5891235686", 16, 64)
 	if err != nil {
 		log.Fatalf("Error converting hex to decimal: %v", err)
 	}
@@ -72,4 +80,35 @@ func HexToFloat(hexStr string) (float32, float64) {
 	}
 
 	return float32Value, float64Value
+}
+
+func TestCANDatasetTraining() {
+	training_data, testing_data := datasets.LoadCANDataset(true)
+
+	CAN_dataset_model := model.New()
+
+	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 896, 0, 0, 0, 0))
+	CAN_dataset_model.Add(new(activation.ReLU))
+
+	CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
+
+	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
+	CAN_dataset_model.Add(new(activation.ReLU))
+
+	CAN_dataset_model.Add(layer.CreateLayer(896, 10, 0, 0, 0, 0))
+	CAN_dataset_model.Add(new(activation.SoftMax))
+
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+
+	CAN_dataset_model.Finalize()
+	CAN_dataset_model.Train(training_data, testing_data, 10, 2000, 10000)
+
+	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
+
+	modelDataProvider := new(model.ModelDataProvider)
+	err := modelDataProvider.Save("CAN_dataset_model_full_shuffled", CAN_dataset_model)
+
+	if err != nil {
+		panic(err)
+	}
 }

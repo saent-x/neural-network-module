@@ -4,14 +4,15 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/saent-x/ids-nn/core"
-	"github.com/saent-x/ids-nn/core/datamodels"
-	"github.com/saent-x/ids-nn/core/scaling"
-	"gonum.org/v1/gonum/mat"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/saent-x/ids-nn/core"
+	"github.com/saent-x/ids-nn/core/datamodels"
+	"github.com/saent-x/ids-nn/core/scaling"
+	"gonum.org/v1/gonum/mat"
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
@@ -150,7 +151,6 @@ func ReadCAN_Folder(folderPath string) ([][]float64, []float64, error) {
 			if err != nil {
 				return nil, nil, err
 			}
-			//fmt.Printf("%s : label -> %.2f\n", entry.Name(), label)
 
 			x, y, err1 := ReadCSVFolder(dataPath, label)
 			if err1 != nil {
@@ -229,7 +229,7 @@ func ReadCSV(filepath string, label float64) ([][]float64, []float64, error) {
 
 		row := make([]float64, 4)
 		for i := 0; i < 4; i++ {
-			if i == 1 {
+			if i == 1 { //
 				val, err := strconv.ParseInt(record[i], 16, 64)
 				if err != nil {
 					log.Fatalf("Error converting hex to decimal: %v", err)
@@ -237,12 +237,19 @@ func ReadCSV(filepath string, label float64) ([][]float64, []float64, error) {
 
 				row[i] = float64(val)
 			} else if i == 2 {
-				val, err := strconv.ParseUint(record[i], 16, 64)
-				if err != nil {
-					log.Fatalf("Error converting hex to decimal: %v", err)
+				if record[i] == "" {
+					row[i] = .0
+				} else {
+					hex := core.CleanHexString(record[i])
+
+					val, err := strconv.ParseUint(hex, 16, 64)
+					if err != nil {
+						log.Fatalf("Error converting hex to decimal: %v", err)
+					}
+
+					row[i] = float64(val)
 				}
 
-				row[i] = float64(val)
 			} else {
 				row[i], err = strconv.ParseFloat(record[i], 64)
 				if err != nil {
@@ -252,7 +259,7 @@ func ReadCSV(filepath string, label float64) ([][]float64, []float64, error) {
 			}
 		}
 
-		data = append(data, row[:3])
+		data = append(data, row[1:3])
 		attackValue := row[3]
 
 		if attackValue == 1 {

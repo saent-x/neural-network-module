@@ -170,7 +170,6 @@ func PlotSineData(X, Y *mat.Dense) bool {
 
 	// Save the plot to a PNG file
 	if err := p.Save(6*vg.Inch, 4*vg.Inch, "sin_plot.png"); err != nil {
-		panic(err)
 		return false
 	}
 
@@ -582,7 +581,7 @@ func GetDistinctValues(slice []float64) []float64 {
 	return uniqueSlice
 }
 
-func cleanHexString(hexStr string) string {
+func CleanHexString(hexStr string) string {
 	// Remove "0x" prefix if present
 	hexStr = strings.TrimPrefix(hexStr, "0x")
 
@@ -598,7 +597,7 @@ func cleanHexString(hexStr string) string {
 }
 
 func HexToFloat64(hexStr string) (float64, error) {
-	cleanedHex := cleanHexString(hexStr)
+	cleanedHex := CleanHexString(hexStr)
 
 	// Decode hex string to bytes
 	bytes, err := hex.DecodeString(cleanedHex)
