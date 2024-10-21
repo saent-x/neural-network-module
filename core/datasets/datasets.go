@@ -8,6 +8,7 @@ import (
 	"github.com/saent-x/ids-nn/core/datamodels"
 	"github.com/saent-x/ids-nn/core/scaling"
 	"gonum.org/v1/gonum/mat"
+	"io"
 	"log"
 	"math"
 	"os"
@@ -275,11 +276,19 @@ func ReadCSV(filepath string, label float64) ([][]float64, []float64, error) {
 	}
 	defer file.Close()
 
+	return readCSV(file)
+}
+
+func ReadCSVFile(file io.Reader) ([][]float64, []float64, error) {
+	return readCSV(file)
+}
+
+func readCSV(file io.Reader) ([][]float64, []float64, error) {
 	// Create a new CSV reader
 	reader := csv.NewReader(file)
 
 	// Read the header (and discard it)
-	_, err = reader.Read()
+	_, err := reader.Read()
 	if err != nil {
 		fmt.Println("Error reading header:", err)
 		return nil, nil, err
@@ -399,8 +408,15 @@ func LoadFashionMNISTDataset(shuffle bool) (datamodels.TrainingData, datamodels.
 	return datamodels.TrainingData{X, y}, datamodels.ValidationData{X_test, y_test}
 }
 
-func LoadCANDatasetForInference(shuffle bool) *mat.Dense {
-	x, _, err := ReadCSV("../../core/datasets/inference/single.csv", 1)
+func LoadCANDatasetForInference(shuffle bool, filepath string) *mat.Dense {
+	file, err := os.Open(filepath)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return nil
+	}
+	defer file.Close()
+
+	x, _, err := ReadCSVFile(file)
 	if err != nil {
 		panic(err)
 	}

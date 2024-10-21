@@ -170,7 +170,7 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 }
 
 func TestModelInference(t *testing.T) {
-	can_data := datasets.LoadCANDatasetForInference(false)
+	can_data := datasets.LoadCANDatasetForInference(false, "../../core/datasets/inference/single.csv")
 
 	modelDataProvider := new(ModelDataProvider)
 	model, err := modelDataProvider.Load("CAN_dataset_model_full")
