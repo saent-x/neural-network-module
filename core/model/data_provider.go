@@ -103,9 +103,9 @@ func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) 
 	return nil
 }
 
-func (modelDataProvider *ModelDataProvider) Load(filename string) (*Model, error) {
+func (modelDataProvider *ModelDataProvider) Load(filepath string) (*Model, error) {
 
-	file, err := os.Open(fmt.Sprintf("./saved_models/%s.json", filename))
+	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
 	}

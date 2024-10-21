@@ -161,7 +161,7 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 
 	modelDataProvider := new(ModelDataProvider)
 
-	model, err := modelDataProvider.Load("fashionMNIST_model_full_3")
+	model, err := modelDataProvider.Load("./saved_models/fashionMNIST_model_full_3.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +173,8 @@ func TestModelInference(t *testing.T) {
 	can_data := datasets.LoadCANDatasetForInference(false, "../../core/datasets/inference/single.csv")
 
 	modelDataProvider := new(ModelDataProvider)
-	model, err := modelDataProvider.Load("CAN_dataset_model_full")
+
+	model, err := modelDataProvider.Load("./saved_models/CAN_dataset_model_full.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +215,7 @@ func TestModel_Predict(t *testing.T) {
 
 	modelDataProvider := new(ModelDataProvider)
 
-	model, err := modelDataProvider.Load("fashionMNIST_model_full")
+	model, err := modelDataProvider.Load("./saved_models/fashionMNIST_model_full.json")
 	if err != nil {
 		t.Fatal(err)
 	}
