@@ -138,13 +138,13 @@ func TestCANDatasetTraining(t *testing.T) {
 	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	CAN_dataset_model.Add(layer.CreateLayer(896, 10, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
-	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-3, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
-	CAN_dataset_model.Train(training_data, testing_data, 10, 2000, 5000)
+	CAN_dataset_model.Train(training_data, testing_data, 10, 32, 50000)
 
 	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
 
@@ -170,35 +170,43 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 }
 
 func TestModelInference(t *testing.T) {
-	image_data := datasets.LoadFashionMNISTDatasetForInference(false)
+	can_data := datasets.LoadCANDatasetForInference(false)
 
 	modelDataProvider := new(ModelDataProvider)
-	model, err := modelDataProvider.Load("fashionMNIST_model_full")
+	model, err := modelDataProvider.Load("CAN_dataset_model_full")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	confidences := model.Predict(image_data, 0)
+	confidences := model.Predict(can_data, 5000)
 	predictions := model.OutputLayerActivation.Predictions(confidences)
 
 	fmt.Println(mat.Formatted(predictions))
 
-	fashionMNIST_labels := map[int]string{
-		0: "T-shirt/top",
-		1: "Trouser",
-		2: "Pullover",
-		3: "Dress",
-		4: "Coat",
-		5: "Sandal",
-		6: "Shirt",
-		7: "Sneaker",
-		8: "Bag",
-		9: "Ankle boot",
+	CANAttackLabels := map[int]string{
+		0: "attack-free",
+		1: "combined-attacks",
+		2: "DoS-attacks",
+		3: "fuzzing-attacks",
+		4: "gear-attacks",
+		5: "interval-attacks",
+		6: "rpm-attacks",
+		7: "speed-attacks",
+		8: "standstill-attacks",
+		9: "systematic-attacks",
 	}
 
+	var zerCount, onesCount int
 	for _, datum := range predictions.RawMatrix().Data {
-		fmt.Println(fashionMNIST_labels[int(datum)])
+		if datum == 0 {
+			zerCount++
+		} else {
+			onesCount++
+			fmt.Println(CANAttackLabels[int(datum)])
+		}
 	}
+
+	fmt.Printf("attack free: %d, anomaly: %d", zerCount, onesCount)
 }
 
 func TestModel_Predict(t *testing.T) {

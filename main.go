@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("Error converting hex to decimal: %v", err)
 	}
 
-	fmt.Println("C0003FFD000000FF -> ", float64(flValue2))
+	fmt.Println("C0 00 3F FD 00 00 00 FF -> ", float64(flValue2))
 	//for _, hex := range hexValues {
 	//	float32Value, float64Value := HexToFloat(hex)
 	//	fmt.Printf("Hex: %s\n", hex)

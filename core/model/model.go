@@ -161,7 +161,6 @@ func (model *Model) Finalize() {
 			if layer, ok := model.Layers[i].(layer.ILayer); ok {
 				layer.SetPreviousLayer(model.InputLayer)
 				layer.SetNextLayer(model.Layers[i+1])
-				// if it doesn't work try overwriting the layer
 			}
 		} else if i < layers_count-1 /** all layers asides 1st and last**/ {
 			if layer, ok := model.Layers[i].(layer.ILayer); ok {
@@ -232,7 +231,7 @@ func (model *Model) Evaluate(validation_data datamodels.ValidationData, batch_si
 }
 
 func (model *Model) getParameters() []datamodels.ModelParameter {
-	modelParameters := []datamodels.ModelParameter{}
+	var modelParameters []datamodels.ModelParameter
 
 	for _, layer := range model.TrainableLayers {
 		modelParameters = append(modelParameters, layer.GetParameters())
