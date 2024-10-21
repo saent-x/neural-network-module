@@ -4,19 +4,24 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-	"strconv"
-
 	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/datamodels"
 	"github.com/saent-x/ids-nn/core/scaling"
 	"gonum.org/v1/gonum/mat"
+	"log"
+	"math"
+	"os"
+	"path/filepath"
+	"strconv"
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
 	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-partial-sm")
+	if err != nil {
+		panic(err)
+	}
+
+	x, y, err = Oversample(x, y)
 	if err != nil {
 		panic(err)
 	}
@@ -50,6 +55,11 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 		panic(err)
 	}
 
+	x_test, y_test, err = Oversample(x_test, y_test)
+	if err != nil {
+		panic(err)
+	}
+
 	// Convert data to mat.Dense
 	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
 	Y_mat_test := mat.NewDense(1, len(y_test), y_test)
@@ -63,7 +73,7 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 		Y: Y_mat_test,
 	}
 
-	fmt.Println(mat.Formatted(core.FirstN(training_data.X, 10)))
+	//fmt.Println(mat.Formatted(core.FirstN(training_data.X, 10)))
 
 	if err = ScaleValues(training_data.X); err != nil {
 		panic(err)
@@ -73,6 +83,67 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	return training_data, testing_data
+}
+
+// Oversample oversamples the attack frames to match the number of normal frames while respecting time intervals
+func Oversample(x [][]float64, y []float64) ([][]float64, []float64, error) {
+	if len(x) != len(y) {
+		return nil, nil, errors.New("error: x & y must have same nos of rows! ")
+	}
+
+	var normalFrames, attackFrames [][]float64
+	var y_normalFrames, y_attackFrames []float64
+
+	for idx, row := range x {
+		if y[idx] == 1 {
+			attackFrames = append(attackFrames, row)
+			y_attackFrames = append(y_attackFrames, y[idx])
+		} else {
+			normalFrames = append(normalFrames, row)
+			y_normalFrames = append(y_normalFrames, y[idx])
+		}
+	}
+
+	// Calculate how many attack frames need to be added
+	attackCount := len(attackFrames)
+	normalCount := len(normalFrames)
+
+	if attackCount == 0 {
+		fmt.Println("No attack frames found. Dataset cannot be oversampled.")
+		return nil, nil, nil
+	}
+
+	if attackCount >= normalCount {
+		fmt.Println("The number of attack frames is already equal or greater than normal frames.")
+		return nil, nil, nil
+	}
+
+	// Oversample attack frames while keeping time intervals realistic
+	newAttackFrames := make([][]float64, 0, normalCount)
+	newYFrames := make([]float64, 0, attackCount)
+
+	for len(newAttackFrames) < normalCount {
+		// For each duplicate, we will add a small delta to the time interval to simulate new attack frames
+		for i := 0; i < attackCount && len(newAttackFrames) < normalCount; i++ {
+			var duplicateFrame []float64
+
+			originalFrame := attackFrames[i]
+			duplicateFrame = append(duplicateFrame, originalFrame...)
+
+			// Adjust the time interval of the duplicated frame slightly to preserve temporal structure
+			timeDelta := math.Min(0.01, originalFrame[9]/10) // Add 1% to 10% of the original time interval
+			duplicateFrame[9] += timeDelta
+
+			newAttackFrames = append(newAttackFrames, duplicateFrame)
+			newYFrames = append(newYFrames, 1)
+		}
+	}
+
+	// Combine the normal and oversampled attack frames
+	balancedDataset := append(normalFrames, newAttackFrames...)
+	balancedYFrames := append(y_normalFrames, newYFrames...)
+
+	return balancedDataset, balancedYFrames, nil
 }
 
 func ScaleValues(matrix *mat.Dense) error {
@@ -98,31 +169,6 @@ func ScaleValues(matrix *mat.Dense) error {
 
 func checkLabel(folder string) (float64, error) {
 	// TODO: needs to be updated to reflect actual classes after tests
-	switch folder {
-	case "attack-free":
-		return 0., nil
-	case "combined-attacks":
-		return 1., nil
-	case "DoS-attacks":
-		return 2., nil
-	case "fuzzing-attacks":
-		return 3., nil
-	case "gear-attacks":
-		return 4., nil
-	case "interval-attacks":
-		return 5., nil
-	case "rpm-attacks":
-		return 6., nil
-	case "speed-attacks":
-		return 7., nil
-	case "standstill-attacks":
-		return 8., nil
-	case "systematic-attacks":
-		return 9., nil
-	default:
-		return 0, errors.New("invalid folder!")
-	}
-
 	//switch folder {
 	//case "attack-free":
 	//	return 0., nil
@@ -130,11 +176,30 @@ func checkLabel(folder string) (float64, error) {
 	//	return 1., nil
 	//case "DoS-attacks":
 	//	return 2., nil
-	//case "gear-attacks":
+	//case "fuzzing-attacks":
 	//	return 3., nil
+	//case "gear-attacks":
+	//	return 4., nil
+	//case "interval-attacks":
+	//	return 5., nil
+	//case "rpm-attacks":
+	//	return 6., nil
+	//case "speed-attacks":
+	//	return 7., nil
+	//case "standstill-attacks":
+	//	return 8., nil
+	//case "systematic-attacks":
+	//	return 9., nil
 	//default:
 	//	return 0, errors.New("invalid folder!")
 	//}
+
+	switch folder {
+	case "attack-free":
+		return 0., nil
+	default:
+		return 1, errors.New("invalid folder!")
+	}
 }
 
 func ReadCAN_Folder(folderPath string) ([][]float64, []float64, error) {
@@ -149,12 +214,13 @@ func ReadCAN_Folder(folderPath string) ([][]float64, []float64, error) {
 	for _, entry := range entries {
 		if entry.IsDir() {
 			dataPath := filepath.Join(folderPath, entry.Name())
-			label, err := checkLabel(entry.Name())
+			//label, err := checkLabel(entry.Name()) // TBD: ignoring this for now, since we're using only two labels
+
 			if err != nil {
 				return nil, nil, err
 			}
 
-			x, y, err1 := ReadCSVFolder(dataPath, label)
+			x, y, err1 := ReadCSVFolder(dataPath, 0)
 			if err1 != nil {
 				return nil, nil, err1
 			}
@@ -291,12 +357,13 @@ func ReadCSV(filepath string, label float64) ([][]float64, []float64, error) {
 
 		prevTimestamp = row[0]
 
-		data = append(data, row[:11])
+		data = append(data, row[1:11])
 		attackValue := row[11]
 
-		if attackValue == 1 {
-			attackValue = label
-		}
+		//if attackValue == 1 {
+		//	attackValue = label
+		//}
+
 		attackValues = append(attackValues, attackValue) // Append last column to attackValues
 
 		lines++
