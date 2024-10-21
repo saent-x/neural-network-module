@@ -416,6 +416,41 @@ func EncodeStructToJSON(d interface{}, filename string) error {
 	return nil
 }
 
+func splitInPairs(text string) string {
+	if len(text) != 16 {
+		return ""
+	}
+
+	var result string
+	for i := 0; i < len(text); i += 2 {
+		if i > 0 {
+			result += " "
+		}
+		result += text[i : i+2]
+	}
+	return result
+}
+
+func ParseDataField(dataField string) ([]float64, error) {
+	dataFieldPairs := splitInPairs(dataField)
+	byteStrings := strings.Split(dataFieldPairs, " ")
+	if len(byteStrings) != 8 {
+		return nil, fmt.Errorf("data field has %d pairs, expected 8", len(dataFieldPairs))
+	}
+	dataBytes := make([]float64, len(byteStrings))
+
+	for i, byteStr := range byteStrings {
+		// Convert each hex byte to a decimal float64 value
+		byteVal, err := strconv.ParseUint(byteStr, 16, 8)
+		if err != nil {
+			return nil, err
+		}
+		dataBytes[i] = float64(byteVal)
+	}
+
+	return dataBytes, nil
+}
+
 func WriteJSONBytesToFile(data []byte, filename string) error {
 	// Create or truncate the file
 	file, err := os.Create(filename)
