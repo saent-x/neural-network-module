@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/saent-x/ids-nn/core"
@@ -159,9 +160,14 @@ func TestCANDatasetTraining(t *testing.T) {
 func TestFashionMISTModelFromFile(t *testing.T) {
 	_, testing_data := datasets.LoadFashionMNISTDataset(true)
 
-	modelDataProvider := new(ModelDataProvider)
+	file, err := os.Open("./saved_models/fashionMNIST_model_full_3.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	model, err := modelDataProvider.Load("./saved_models/fashionMNIST_model_full_3.json")
+	modelDataProvider := new(ModelDataProvider)
+	model, err := modelDataProvider.Load(file)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,9 +178,14 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 func TestModelInference(t *testing.T) {
 	can_data := datasets.LoadCANDatasetForInference(false, "../../core/datasets/inference/single.csv")
 
-	modelDataProvider := new(ModelDataProvider)
+	file, err := os.Open("./saved_models/CAN_dataset_model_full.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	model, err := modelDataProvider.Load("./saved_models/CAN_dataset_model_full.json")
+	modelDataProvider := new(ModelDataProvider)
+	model, err := modelDataProvider.Load(file)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,9 +224,14 @@ func TestModelInference(t *testing.T) {
 func TestModel_Predict(t *testing.T) {
 	_, testing_data := datasets.LoadFashionMNISTDataset(false)
 
-	modelDataProvider := new(ModelDataProvider)
+	file, err := os.Open("./saved_models/fashionMNIST_model_full.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	model, err := modelDataProvider.Load("./saved_models/fashionMNIST_model_full.json")
+	modelDataProvider := new(ModelDataProvider)
+	model, err := modelDataProvider.Load(file)
 	if err != nil {
 		t.Fatal(err)
 	}
