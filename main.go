@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/saent-x/ids-nn/core/metrics"
 	"log"
 	"math"
 	"strconv"
@@ -17,6 +18,43 @@ import (
 )
 
 func main() {
+	RunMetrics()
+}
+
+func RunMetrics() {
+	yTrueBinary := []float64{1, 0, 1, 1, 0, 1, 0, 0, 1, 0}
+	yPredBinary := []float64{1, 0, 0, 1, 0, 1, 0, 1, 1, 0}
+	numClassesBinary := 2
+
+	confusionMatrixBinary := metrics.ConfusionMatrix(yTrueBinary, yPredBinary, numClassesBinary)
+	fmt.Printf("Binary Confusion Matrix: %v\n", confusionMatrixBinary)
+
+	accuracyBinary, precisionBinary, recallBinary, f1ScoreBinary := metrics.CalculateMetrics(confusionMatrixBinary, numClassesBinary)
+	fmt.Printf("Binary Accuracy: %v\n", accuracyBinary)
+	fmt.Printf("Binary Precision: %v\n", precisionBinary)
+	fmt.Printf("Binary Recall: %v\n", recallBinary)
+	fmt.Printf("Binary F1-Score: %v\n", f1ScoreBinary)
+
+	metrics.PlotConfusionMatrix(confusionMatrixBinary, numClassesBinary, "binary_confusion_matrix_heatmap.png")
+
+	// Example 2: Multi-class Classification
+	yTrueMulti := []float64{1, 0, 2, 1, 2, 1, 0, 2, 1, 0}
+	yPredMulti := []float64{1, 0, 2, 1, 1, 1, 0, 2, 2, 0}
+	numClassesMulti := 3
+
+	confusionMatrixMulti := metrics.ConfusionMatrix(yTrueMulti, yPredMulti, numClassesMulti)
+	fmt.Printf("Multi-class Confusion Matrix: %v\n", confusionMatrixMulti)
+
+	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, numClassesMulti)
+	fmt.Printf("Multi-class Accuracy: %v\n", accuracyMulti)
+	fmt.Printf("Multi-class Precision: %v\n", precisionMulti)
+	fmt.Printf("Multi-class Recall: %v\n", recallMulti)
+	fmt.Printf("Multi-class F1-Score: %v\n", f1ScoreMulti)
+
+	metrics.PlotConfusionMatrix(confusionMatrixMulti, numClassesMulti, "multi_confusion_matrix_heatmap.png")
+}
+
+func RunHex() {
 	flValue, err := strconv.ParseInt("19D", 16, 64)
 	if err != nil {
 		log.Fatalf("Error converting hex to decimal: %v", err)
@@ -29,12 +67,6 @@ func main() {
 	}
 
 	fmt.Println("C0 00 3F FD 00 00 00 FF -> ", float64(flValue2))
-	//for _, hex := range hexValues {
-	//	float32Value, float64Value := HexToFloat(hex)
-	//	fmt.Printf("Hex: %s\n", hex)
-	//	fmt.Printf("  As float32: %f\n", float32Value)
-	//	fmt.Printf("  As float64: %f\n\n", float64Value)
-	//}
 }
 
 func hexToDecimal(hexValues []string) []float64 {

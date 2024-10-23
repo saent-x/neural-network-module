@@ -22,10 +22,10 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 		panic(err)
 	}
 
-	x, y, err = Oversample(x, y)
-	if err != nil {
-		panic(err)
-	}
+	//x, y, err = Oversample(x, y)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	// Convert data to mat.Dense
 	X_mat := mat.NewDense(len(x), len(x[0]), nil)
@@ -56,10 +56,10 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 		panic(err)
 	}
 
-	x_test, y_test, err = Oversample(x_test, y_test)
-	if err != nil {
-		panic(err)
-	}
+	//x_test, y_test, err = Oversample(x_test, y_test)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	// Convert data to mat.Dense
 	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
@@ -408,39 +408,99 @@ func LoadFashionMNISTDataset(shuffle bool) (datamodels.TrainingData, datamodels.
 	return datamodels.TrainingData{X, y}, datamodels.ValidationData{X_test, y_test}
 }
 
-func LoadCANDatasetForInference(shuffle bool, filepath string) *mat.Dense {
+func LoadCANDatasetForInference(filepath string, label int) (*mat.Dense, []float64) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
-		return nil
+		return nil, nil
 	}
 	defer file.Close()
 
-	x, _, err := ReadCSVFile(file)
+	x, y, err := RedundantReadCSV(file, label)
 	if err != nil {
 		panic(err)
 	}
 
-	// Convert data to mat.Dense
-	X_mat := mat.NewDense(len(x), len(x[0]), nil)
+	//// Convert data to mat.Dense
+	//X_mat := mat.NewDense(len(x), len(x[0]), nil)
+	//
+	//for i := 0; i < X_mat.RawMatrix().Rows; i++ {
+	//	X_mat.SetRow(i, x[i])
+	//}
 
-	if shuffle {
-		shuffledIdxs := core.ShuffleSlice(core.GetRange(len(x)))
-		for i := 0; i < X_mat.RawMatrix().Rows; i++ {
-			idx := shuffledIdxs[i]
-			X_mat.SetRow(idx, x[i])
-		}
-	} else {
-		for i := 0; i < X_mat.RawMatrix().Rows; i++ {
-			X_mat.SetRow(i, x[i])
-		}
-	}
-
-	if err = ScaleValues(X_mat); err != nil {
+	if err = ScaleValues(x); err != nil {
 		panic(err)
 	}
 
-	return X_mat
+	return x, y
+}
+
+func RedundantReadCSV(file io.Reader, label int) (*mat.Dense, []float64, error) {
+	// Create a new CSV reader
+	reader := csv.NewReader(file)
+
+	// Read the header (and discard it)
+	_, err := reader.Read()
+	if err != nil {
+		fmt.Println("Error reading header:", err)
+		return nil, nil, err
+	}
+
+	var data [][]float64
+	var attackValues []float64
+
+	// Read the file line by line
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			break // End of file or error
+		}
+
+		row := make([]float64, 4)
+		for i := 0; i < 4; i++ {
+			if i == 1 {
+				val, err := strconv.ParseInt(record[i], 16, 64)
+				if err != nil {
+					log.Fatalf("Error converting hex to decimal: %v", err)
+				}
+				row[i] = float64(val)
+			} else if i == 2 {
+				if record[i] == "" {
+					row[i] = 0
+				} else {
+					val, err := strconv.ParseUint(record[i], 16, 64)
+					if err != nil {
+						log.Fatalf("Error converting hex to decimal: %v", err)
+					}
+					row[i] = float64(val)
+				}
+			} else {
+				row[i], err = strconv.ParseFloat(record[i], 64)
+				if err != nil {
+					fmt.Printf("Error parsing float in row %d, column %d: %v\n", len(data)+1, i+1, err)
+					return nil, nil, err
+				}
+			}
+		}
+
+		data = append(data, row[:3])
+		attackValue := row[3]
+
+		if attackValue == 1 {
+			attackValue = float64(label)
+		}
+		attackValues = append(attackValues, attackValue)
+	}
+
+	var sparseData []float64
+	for i := 0; i < len(data); i++ {
+		sparseData = append(sparseData, data[i]...)
+	}
+
+	result := core.CreateDenseMatrix(len(data), len(data[0]), sparseData)
+	ScaleValues(result)
+
+	return result, attackValues, nil
 }
 
 func LoadFashionMNISTDatasetForInference(shuffle bool) *mat.Dense {
