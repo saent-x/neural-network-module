@@ -4,27 +4,28 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/saent-x/ids-nn/core"
-	"github.com/saent-x/ids-nn/core/datamodels"
-	"github.com/saent-x/ids-nn/core/scaling"
-	"gonum.org/v1/gonum/mat"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/saent-x/ids-nn/core"
+	"github.com/saent-x/ids-nn/core/datamodels"
+	"github.com/saent-x/ids-nn/core/scaling"
+	"gonum.org/v1/gonum/mat"
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-partial-sm")
+	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-full-001")
 	if err != nil {
 		panic(err)
 	}
 
-	x, y, err = Oversample(x, y)
-	if err != nil {
-		panic(err)
-	}
+	// x, y, err = Oversample(x, y)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// Convert data to mat.Dense
 	X_mat := mat.NewDense(len(x), len(x[0]), nil)
@@ -50,15 +51,15 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-partial-sm")
+	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
 	if err != nil {
 		panic(err)
 	}
 
-	x_test, y_test, err = Oversample(x_test, y_test)
-	if err != nil {
-		panic(err)
-	}
+	// x_test, y_test, err = Oversample(x_test, y_test)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// Convert data to mat.Dense
 	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
@@ -92,12 +93,11 @@ func Oversample(x [][]float64, y []float64) ([][]float64, []float64, error) {
 	}
 
 	var normalFrames, attackFrames [][]float64
-	var y_normalFrames, y_attackFrames []float64
+	var y_normalFrames []float64
 
 	for idx, row := range x {
 		if y[idx] == 1 {
 			attackFrames = append(attackFrames, row)
-			y_attackFrames = append(y_attackFrames, y[idx])
 		} else {
 			normalFrames = append(normalFrames, row)
 			y_normalFrames = append(y_normalFrames, y[idx])
@@ -215,10 +215,6 @@ func ReadCAN_Folder(folderPath string) ([][]float64, []float64, error) {
 		if entry.IsDir() {
 			dataPath := filepath.Join(folderPath, entry.Name())
 			//label, err := checkLabel(entry.Name()) // TBD: ignoring this for now, since we're using only two labels
-
-			if err != nil {
-				return nil, nil, err
-			}
 
 			x, y, err1 := ReadCSVFolder(dataPath, 0)
 			if err1 != nil {
