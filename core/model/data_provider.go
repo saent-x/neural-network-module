@@ -12,8 +12,8 @@ import (
 	datawrappers "github.com/saent-x/ids-nn/core/model/data_wrappers"
 	"github.com/saent-x/ids-nn/core/optimization"
 	"gonum.org/v1/gonum/mat"
+	"io"
 	"log"
-	"os"
 	"reflect"
 )
 
@@ -103,19 +103,13 @@ func (modelDataProvider *ModelDataProvider) Save(filename string, model *Model) 
 	return nil
 }
 
-func (modelDataProvider *ModelDataProvider) Load(filename string) (*Model, error) {
-
-	file, err := os.Open(fmt.Sprintf("./saved_models/%s.json", filename))
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+func (modelDataProvider *ModelDataProvider) Load(file io.Reader) (*Model, error) {
 
 	var retrievedModel datawrappers.ModelWrapper
 
 	// Use json.NewDecoder to stream-read the JSON from the file
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&retrievedModel)
+	err := decoder.Decode(&retrievedModel)
 	if err != nil {
 		log.Fatalf("Failed to decode JSON: %v", err)
 	}

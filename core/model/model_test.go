@@ -2,6 +2,9 @@ package model
 
 import (
 	"fmt"
+	"github.com/saent-x/ids-nn/core/metrics"
+	"gonum.org/v1/gonum/stat"
+	"os"
 	"testing"
 
 	"github.com/saent-x/ids-nn/core"
@@ -159,9 +162,14 @@ func TestCANDatasetTraining(t *testing.T) {
 func TestFashionMISTModelFromFile(t *testing.T) {
 	_, testing_data := datasets.LoadFashionMNISTDataset(true)
 
-	modelDataProvider := new(ModelDataProvider)
+	file, err := os.Open("./saved_models/fashionMNIST_model_full_3.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	model, err := modelDataProvider.Load("fashionMNIST_model_full_3")
+	modelDataProvider := new(ModelDataProvider)
+	model, err := modelDataProvider.Load(file)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,20 +178,25 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 }
 
 func TestModelInference(t *testing.T) {
-	can_data := datasets.LoadCANDatasetForInference(false)
+	// get and save y_true
+	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/single-2.csv", 6)
+
+	file, err := os.Open("./saved_models/CAN_dataset_model_full.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
 	modelDataProvider := new(ModelDataProvider)
-	model, err := modelDataProvider.Load("CAN_dataset_model_full")
+	model, err := modelDataProvider.Load(file)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	confidences := model.Predict(can_data, 5000)
+	confidences := model.Predict(can_data, 100)
 	predictions := model.OutputLayerActivation.Predictions(confidences)
 
-	fmt.Println(mat.Formatted(predictions))
-
-	CANAttackLabels := map[int]string{
+	_ = map[int]string{
 		0: "attack-free",
 		1: "combined-attacks",
 		2: "DoS-attacks",
@@ -202,19 +215,36 @@ func TestModelInference(t *testing.T) {
 			zerCount++
 		} else {
 			onesCount++
-			fmt.Println(CANAttackLabels[int(datum)])
 		}
 	}
 
 	fmt.Printf("attack free: %d, anomaly: %d", zerCount, onesCount)
+
+	// Calculate Metrics
+	confusionMatrixMulti := metrics.ConfusionMatrix(y, predictions.RawMatrix().Data, 10)
+	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, 10)
+
+	fmt.Println()
+	fmt.Println("<== Metrics ==>")
+	fmt.Println("Average Accuracy: ", stat.Mean(accuracyMulti, nil))
+	fmt.Println("Average Precision: ", stat.Mean(precisionMulti, nil))
+	fmt.Println("Average Recall: ", stat.Mean(recallMulti, nil))
+	fmt.Println("Average F1: ", stat.Mean(f1ScoreMulti, nil))
+
+	metrics.PlotConfusionMatrix(confusionMatrixMulti, 10, "rpm_confusion_matrix.png")
 }
 
 func TestModel_Predict(t *testing.T) {
 	_, testing_data := datasets.LoadFashionMNISTDataset(false)
 
-	modelDataProvider := new(ModelDataProvider)
+	file, err := os.Open("./saved_models/fashionMNIST_model_full.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	model, err := modelDataProvider.Load("fashionMNIST_model_full")
+	modelDataProvider := new(ModelDataProvider)
+	model, err := modelDataProvider.Load(file)
 	if err != nil {
 		t.Fatal(err)
 	}
