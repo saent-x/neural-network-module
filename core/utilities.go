@@ -431,6 +431,16 @@ func splitInPairs(text string) string {
 	return result
 }
 
+func VectorToSlice(v mat.Vector) []float64 {
+	n := v.Len()
+	slice := make([]float64, n)
+
+	for i := 0; i < n; i++ {
+		slice[i] = v.AtVec(i)
+	}
+	return slice
+}
+
 func ParseDataField(dataField string) ([]float64, error) {
 	dataFieldPairs := splitInPairs(dataField)
 	byteStrings := strings.Split(dataFieldPairs, " ")
