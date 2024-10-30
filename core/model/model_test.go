@@ -2,10 +2,11 @@ package model
 
 import (
 	"fmt"
-	"github.com/saent-x/ids-nn/core/metrics"
-	"gonum.org/v1/gonum/stat"
 	"os"
 	"testing"
+
+	"github.com/saent-x/ids-nn/core/metrics"
+	"gonum.org/v1/gonum/stat"
 
 	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/accuracy"
@@ -133,21 +134,21 @@ func TestCANDatasetTraining(t *testing.T) {
 
 	CAN_dataset_model := New()
 
-	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 896, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 512, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
 	CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
 
-	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(512, 512, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(512, 2, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
-	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-3, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
-	CAN_dataset_model.Train(training_data, testing_data, 10, 32, 50000)
+	CAN_dataset_model.Train(training_data, testing_data, 10, 512, 50000)
 
 	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
 
@@ -178,8 +179,9 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 }
 
 func TestModelInference(t *testing.T) {
+	label := 6
 	// get and save y_true
-	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/single-2.csv", 6)
+	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/attack-free.csv", label)
 
 	file, err := os.Open("./saved_models/CAN_dataset_model_full.json")
 	if err != nil {
@@ -218,11 +220,36 @@ func TestModelInference(t *testing.T) {
 		}
 	}
 
+	var updPredictions, updY []float64
+	if label != 1 {
+		for i := 0; i < len(y); i++ {
+			if y[i] != 0 {
+				updY = append(updY, 1)
+				continue
+			}
+			updY = append(updY, 0)
+		}
+	} else {
+		updPredictions = predictions.RawMatrix().Data
+	}
+
+	if label != 1 {
+		for i := 0; i < len(predictions.RawMatrix().Data); i++ {
+			if predictions.RawMatrix().Data[i] != 0 {
+				updPredictions = append(updPredictions, 1)
+				continue
+			}
+			updPredictions = append(updPredictions, 0)
+		}
+	} else {
+		updY = y
+	}
+
 	fmt.Printf("attack free: %d, anomaly: %d", zerCount, onesCount)
 
 	// Calculate Metrics
-	confusionMatrixMulti := metrics.ConfusionMatrix(y, predictions.RawMatrix().Data, 10)
-	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, 10)
+	confusionMatrixMulti := metrics.ConfusionMatrix(updY, updPredictions, 2)
+	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, 2)
 
 	fmt.Println()
 	fmt.Println("<== Metrics ==>")
@@ -231,7 +258,7 @@ func TestModelInference(t *testing.T) {
 	fmt.Println("Average Recall: ", stat.Mean(recallMulti, nil))
 	fmt.Println("Average F1: ", stat.Mean(f1ScoreMulti, nil))
 
-	metrics.PlotConfusionMatrix(confusionMatrixMulti, 10, "rpm_confusion_matrix.png")
+	metrics.PlotConfusionMatrix(confusionMatrixMulti, 2, "rpm_confusion_matrix.png")
 }
 
 func TestModel_Predict(t *testing.T) {
