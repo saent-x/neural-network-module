@@ -144,15 +144,15 @@ func TestCANDatasetTraining(t *testing.T) {
 	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
-	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-3, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
-	CAN_dataset_model.Train(training_data, testing_data, 10, 32, 50000)
+	CAN_dataset_model.Train(training_data, testing_data, 10, 128, 2000)
 
 	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
 
 	modelDataProvider := new(ModelDataProvider)
-	err := modelDataProvider.Save("CAN_dataset_model_full_shuffled", CAN_dataset_model)
+	err := modelDataProvider.Save("CAN_dataset_model_full_shuffled_2", CAN_dataset_model)
 
 	if err != nil {
 		panic(err)
@@ -179,7 +179,8 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 
 func TestModelInference(t *testing.T) {
 	// get and save y_true
-	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/single-2.csv", 6)
+	label := 6
+	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/single-2.csv", label)
 
 	file, err := os.Open("./saved_models/CAN_dataset_model_full.json")
 	if err != nil {
@@ -221,8 +222,27 @@ func TestModelInference(t *testing.T) {
 	fmt.Printf("attack free: %d, anomaly: %d", zerCount, onesCount)
 
 	// Calculate Metrics
-	confusionMatrixMulti := metrics.ConfusionMatrix(y, predictions.RawMatrix().Data, 10)
-	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, 10)
+	var updPred, updYtrue []float64
+	if label != 1 {
+		for _, datum := range predictions.RawMatrix().Data {
+			if datum == 0 {
+				updPred = append(updPred, datum)
+			} else {
+				updPred = append(updPred, 1)
+			}
+		}
+
+		for _, datum := range y {
+			if datum == 0 {
+				updYtrue = append(updYtrue, datum)
+			} else {
+				updYtrue = append(updYtrue, 1)
+			}
+		}
+	}
+
+	confusionMatrixMulti := metrics.ConfusionMatrix(updYtrue, updPred, 2)
+	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, 2)
 
 	fmt.Println()
 	fmt.Println("<== Metrics ==>")
@@ -231,7 +251,7 @@ func TestModelInference(t *testing.T) {
 	fmt.Println("Average Recall: ", stat.Mean(recallMulti, nil))
 	fmt.Println("Average F1: ", stat.Mean(f1ScoreMulti, nil))
 
-	metrics.PlotConfusionMatrix(confusionMatrixMulti, 10, "rpm_confusion_matrix.png")
+	metrics.PlotConfusionMatrix(confusionMatrixMulti, 2, "rpm_confusion_matrix.png")
 }
 
 func TestModel_Predict(t *testing.T) {

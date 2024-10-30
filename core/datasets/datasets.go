@@ -150,18 +150,31 @@ func Oversample(x [][]float64, y []float64) ([][]float64, []float64, error) {
 func ScaleValues(matrix *mat.Dense) error {
 	_, cols := matrix.Dims()
 
+	fmt.Println(mat.Formatted(core.FirstN(matrix, 50)))
+
 	for i := 0; i < cols; i++ {
 		col := matrix.ColView(i)
-		maxValue := mat.Max(col)
-		var scaledCol []float64
 
-		for j := 0; j < col.Len(); j++ {
-			scaledValue, err := scaling.Scale(scaling.NEG_ONE_TO_POS_ONE, col.AtVec(j), maxValue)
-			if err != nil {
-				return err
-			}
-			scaledCol = append(scaledCol, scaledValue)
+		maxValue := mat.Max(col)
+		minValue := mat.Min(col)
+
+		fmt.Printf("min: %f, max: %f\n", minValue, maxValue)
+
+		//var scaledCol []float64
+		colSlice := core.VectorToSlice(col)
+		scaledCol, err := scaling.RobustScale(colSlice)
+		if err != nil {
+			return err
 		}
+
+		//for j := 0; j < col.Len(); j++ {
+		//	scaledValue, err := scaling.Scale(scaling.NEG_ONE_TO_POS_ONE, col.AtVec(j), maxValue)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	scaledCol = append(scaledCol, scaledValue)
+		//}
+
 		matrix.SetCol(i, scaledCol)
 	}
 
