@@ -2,7 +2,9 @@ package scaling
 
 import (
 	"errors"
+	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
+	"math"
 	"sort"
 )
 
@@ -58,4 +60,46 @@ func RobustScale(data []float64) ([]float64, error) {
 	}
 
 	return scaledData, nil
+}
+
+func ZScoreNormalizationDense(matrix *mat.Dense) *mat.Dense {
+	rows, cols := matrix.Dims()
+	normalizedData := mat.NewDense(rows, cols, nil)
+
+	// Calculate mean and standard deviation for each column
+	for j := 0; j < cols; j++ {
+		col := mat.Col(nil, j, matrix)
+		mean := calculateMean(col)
+		stdDev := calculateStdDev(col, mean)
+
+		for i := 0; i < rows; i++ {
+			value := matrix.At(i, j)
+			if stdDev != 0 {
+				normalizedData.Set(i, j, (value-mean)/stdDev)
+			} else {
+				normalizedData.Set(i, j, 0.0) // If std_dev is 0, set to 0 to avoid NaN
+			}
+		}
+	}
+
+	return normalizedData
+}
+
+// calculateMean calculates the mean of a slice of float64 values
+func calculateMean(values []float64) float64 {
+	sum := 0.0
+	for _, value := range values {
+		sum += value
+	}
+	return sum / float64(len(values))
+}
+
+// calculateStdDev calculates the standard deviation of a slice of float64 values, given the mean
+func calculateStdDev(values []float64, mean float64) float64 {
+	var sumSquares float64
+	for _, value := range values {
+		diff := value - mean
+		sumSquares += diff * diff
+	}
+	return math.Sqrt(sumSquares / float64(len(values)))
 }
