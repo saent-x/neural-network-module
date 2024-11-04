@@ -2,11 +2,10 @@ package model
 
 import (
 	"fmt"
-	"os"
-	"testing"
-
 	"github.com/saent-x/ids-nn/core/metrics"
 	"gonum.org/v1/gonum/stat"
+	"os"
+	"testing"
 
 	"github.com/saent-x/ids-nn/core"
 	"github.com/saent-x/ids-nn/core/accuracy"
@@ -34,7 +33,7 @@ func TestRegressionModel(t *testing.T) {
 	regression_model.Add(mock.MockRegressionLayer(64, 1, 0, 0, 0, 0))
 	regression_model.Add(new(activation.Linear))
 
-	regression_model.Set(new(loss.MeanSquaredError), optimization.CreateAdaptiveMomentum(0.005, .001, 0.0000001, 0.9, 0.999), new(accuracy.RegressionAccuracy))
+	regression_model.Set(new(loss.MeanSquaredError), optimization.CreateAdaptiveMomentum(0.005, .001, 0.0000001, 0.9, 0.999, 0), new(accuracy.RegressionAccuracy))
 
 	regression_model.Finalize()
 
@@ -54,7 +53,7 @@ func TestBinaryModel(t *testing.T) {
 	binary_categorical_model.Add(mock.MockLayer64_2(64, 1, 0, 0, 0, 0))
 	binary_categorical_model.Add(new(activation.Sigmoid))
 
-	binary_categorical_model.Set(new(loss.BinaryCrossEntropy), optimization.CreateAdaptiveMomentum(1e-3, 5e-7, 1e-7, 0.9, 0.999), new(accuracy.BinaryAccuracy))
+	binary_categorical_model.Set(new(loss.BinaryCrossEntropy), optimization.CreateAdaptiveMomentum(1e-3, 5e-7, 1e-7, 0.9, 0.999, 0), new(accuracy.BinaryAccuracy))
 
 	binary_categorical_model.Finalize()
 
@@ -75,7 +74,7 @@ func TestCategoricalModel(t *testing.T) {
 	classification_model.Add(mock.MockLayer64_1000(512, 3, 0, 0, 0, 0))
 	classification_model.Add(new(activation.SoftMax))
 
-	classification_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.05, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	classification_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.05, 5e-5, 1e-7, 0.9, 0.999, 0), new(accuracy.CategoricalAccuracy))
 
 	classification_model.Finalize()
 
@@ -96,7 +95,7 @@ func TestFashionMISTModel(t *testing.T) {
 	fashionMNIST_model.Add(layer.CreateLayer(512, 10, 0, 0, 0, 0))
 	fashionMNIST_model.Add(new(activation.SoftMax))
 
-	fashionMNIST_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	fashionMNIST_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999, 0), new(accuracy.CategoricalAccuracy))
 
 	fashionMNIST_model.Finalize()
 
@@ -134,30 +133,39 @@ func TestCANDatasetTraining(t *testing.T) {
 
 	CAN_dataset_model := New()
 
-	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 512, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 896, 0, 5e-4, 0, 5e-4))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
 	CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
 
-	CAN_dataset_model.Add(layer.CreateLayer(512, 512, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	CAN_dataset_model.Add(layer.CreateLayer(512, 2, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
-	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-3, 1e-7, 0.9, 0.999, 1.0), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
-	CAN_dataset_model.Train(training_data, testing_data, 10, 128, 2000)
+	CAN_dataset_model.Train(training_data, testing_data, 5, 128, 10000)
 
 	//	CAN_dataset_model.SaveParameters("CAN_dataset_model_parameters")
 
 	modelDataProvider := new(ModelDataProvider)
-	err := modelDataProvider.Save("CAN_dataset_model_full_shuffled_2", CAN_dataset_model)
+	err := modelDataProvider.Save("CAN_dataset_model_full_shuffled_II", CAN_dataset_model)
 
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestMisc(t *testing.T) {
+	a := mat.NewDense(2, 2, []float64{1, 2, 3, 4})
+	b := mat.NewDense(2, 2, []float64{6, 6, 6, 6})
+
+	fmt.Println(mat.Formatted(a))
+	a.Copy(b)
+	fmt.Println(mat.Formatted(a))
 }
 
 func TestFashionMISTModelFromFile(t *testing.T) {
@@ -179,14 +187,9 @@ func TestFashionMISTModelFromFile(t *testing.T) {
 }
 
 func TestModelInference(t *testing.T) {
-	label := 6
 	// get and save y_true
-<<<<<<< HEAD
-	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/attack-free.csv", label)
-=======
 	label := 6
 	can_data, y := datasets.LoadCANDatasetForInference("../../core/datasets/inference/single-2.csv", label)
->>>>>>> 366d5c810b26573787dfb758fdd23d216da7abbf
 
 	file, err := os.Open("./saved_models/CAN_dataset_model_full.json")
 	if err != nil {
@@ -225,37 +228,9 @@ func TestModelInference(t *testing.T) {
 		}
 	}
 
-	var updPredictions, updY []float64
-	if label != 1 {
-		for i := 0; i < len(y); i++ {
-			if y[i] != 0 {
-				updY = append(updY, 1)
-				continue
-			}
-			updY = append(updY, 0)
-		}
-	} else {
-		updPredictions = predictions.RawMatrix().Data
-	}
-
-	if label != 1 {
-		for i := 0; i < len(predictions.RawMatrix().Data); i++ {
-			if predictions.RawMatrix().Data[i] != 0 {
-				updPredictions = append(updPredictions, 1)
-				continue
-			}
-			updPredictions = append(updPredictions, 0)
-		}
-	} else {
-		updY = y
-	}
-
 	fmt.Printf("attack free: %d, anomaly: %d", zerCount, onesCount)
 
 	// Calculate Metrics
-<<<<<<< HEAD
-	confusionMatrixMulti := metrics.ConfusionMatrix(updY, updPredictions, 2)
-=======
 	var updPred, updYtrue []float64
 	if label != 1 {
 		for _, datum := range predictions.RawMatrix().Data {
@@ -276,7 +251,6 @@ func TestModelInference(t *testing.T) {
 	}
 
 	confusionMatrixMulti := metrics.ConfusionMatrix(updYtrue, updPred, 2)
->>>>>>> 366d5c810b26573787dfb758fdd23d216da7abbf
 	accuracyMulti, precisionMulti, recallMulti, f1ScoreMulti := metrics.CalculateMetrics(confusionMatrixMulti, 2)
 
 	fmt.Println()

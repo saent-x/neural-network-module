@@ -4,29 +4,28 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/saent-x/ids-nn/core"
+	"github.com/saent-x/ids-nn/core/datamodels"
+	"github.com/saent-x/ids-nn/core/scaling"
+	"gonum.org/v1/gonum/mat"
 	"io"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/saent-x/ids-nn/core"
-	"github.com/saent-x/ids-nn/core/datamodels"
-	"github.com/saent-x/ids-nn/core/scaling"
-	"gonum.org/v1/gonum/mat"
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-full-001")
+	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-sm")
 	if err != nil {
 		panic(err)
 	}
 
-	// x, y, err = Oversample(x, y)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	//x, y, err = Oversample(x, y)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	// Convert data to mat.Dense
 	X_mat := mat.NewDense(len(x), len(x[0]), nil)
@@ -52,15 +51,15 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
+	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-sm")
 	if err != nil {
 		panic(err)
 	}
 
-	// x_test, y_test, err = Oversample(x_test, y_test)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	//x_test, y_test, err = Oversample(x_test, y_test)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	// Convert data to mat.Dense
 	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
@@ -77,12 +76,21 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 
 	//fmt.Println(mat.Formatted(core.FirstN(training_data.X, 10)))
 
-	if err = ScaleValues(training_data.X); err != nil {
-		panic(err)
-	}
-	if err = ScaleValues(testing_data.X); err != nil {
-		panic(err)
-	}
+	//if err = ScaleValues(training_data.X); err != nil {
+	//	panic(err)
+	//}
+	//if err = ScaleValues(testing_data.X); err != nil {
+	//	panic(err)
+	//}
+
+	scaledX := scaling.ZScoreNormalizationDense(training_data.X)
+	scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
+
+	training_data.X.Copy(scaledX)
+	testing_data.Y.Copy(scaledXtest)
+
+	// save training data to file
+	// core.SaveMatrixToCSV(training_data.X, "processed_data.csv")
 
 	return training_data, testing_data
 }
@@ -94,11 +102,12 @@ func Oversample(x [][]float64, y []float64) ([][]float64, []float64, error) {
 	}
 
 	var normalFrames, attackFrames [][]float64
-	var y_normalFrames []float64
+	var y_normalFrames, y_attackFrames []float64
 
 	for idx, row := range x {
 		if y[idx] == 1 {
 			attackFrames = append(attackFrames, row)
+			y_attackFrames = append(y_attackFrames, y[idx])
 		} else {
 			normalFrames = append(normalFrames, row)
 			y_normalFrames = append(y_normalFrames, y[idx])
@@ -223,6 +232,10 @@ func ReadCAN_Folder(folderPath string) ([][]float64, []float64, error) {
 			dataPath := filepath.Join(folderPath, entry.Name())
 			//label, err := checkLabel(entry.Name()) // TBD: ignoring this for now, since we're using only two labels
 
+			if err != nil {
+				return nil, nil, err
+			}
+
 			x, y, err1 := ReadCSVFolder(dataPath, 0)
 			if err1 != nil {
 				return nil, nil, err1
@@ -300,6 +313,7 @@ func readCSV(file io.Reader) ([][]float64, []float64, error) {
 	var attackValues []float64
 	var prevTimestamp float64
 	lines := 0
+	epsilon := 0.000008
 
 	// Read the file line by line
 	for {
@@ -325,20 +339,26 @@ func readCSV(file io.Reader) ([][]float64, []float64, error) {
 				row[i] = float64(val)
 			} else if i == 2 {
 				if record[i] == "" {
-					row[2] = 0
-					row[3] = 0
-					row[4] = 0
-					row[5] = 0
-					row[6] = 0
-					row[7] = 0
-					row[8] = 0
-					row[9] = 0
+					row[2] = epsilon
+					row[3] = epsilon
+					row[4] = epsilon
+					row[5] = epsilon
+					row[6] = epsilon
+					row[7] = epsilon
+					row[8] = epsilon
+					row[9] = epsilon
 				} else {
 					hex := core.CleanHexString(record[i])
 
 					vals, err := core.ParseDataField(hex)
 					if err != nil {
 						log.Fatalf("Error converting hex to decimal: %v", err)
+					}
+
+					for i := 0; i < len(vals); i++ {
+						if vals[i] == 0 {
+							vals[i] = epsilon
+						}
 					}
 
 					row[2] = vals[0]
