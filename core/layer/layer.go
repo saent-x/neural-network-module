@@ -4,6 +4,7 @@ import (
 	"github.com/saent-x/ids-nn/core/datamodels"
 	"github.com/samber/lo"
 	"gonum.org/v1/gonum/mat"
+	"math"
 	"math/rand"
 )
 
@@ -54,13 +55,10 @@ type Layer struct {
 func CreateLayer(n_inputs int, n_neurons int, weight_regularizer_l1, weight_regularizer_l2, bias_regularizer_l1, bias_regularizer_l2 float64) *Layer {
 	layer := new(Layer)
 
-	layer.Biases = mat.NewDense(1, n_neurons, make([]float64, n_neurons))
-	layer.Biases.Zero()
-	layer.Weights = mat.NewDense(n_inputs, n_neurons, nil)
+	weights, biases := initializeWeightsnBias(n_inputs, n_neurons)
 
-	layer.Weights.Apply(func(i, j int, v float64) float64 {
-		return 0.1 * rand.NormFloat64()
-	}, layer.Weights)
+	layer.Biases = mat.DenseCopyOf(biases)
+	layer.Weights = mat.DenseCopyOf(weights)
 
 	layer.Weight_Regularizer_L1 = weight_regularizer_l1
 	layer.Weight_Regularizer_L2 = weight_regularizer_l2
@@ -69,6 +67,25 @@ func CreateLayer(n_inputs int, n_neurons int, weight_regularizer_l1, weight_regu
 	layer.Biases_Regularizer_L2 = bias_regularizer_l2
 
 	return layer
+}
+
+func initializeWeightsnBias(numInputs, numOutputs int) (*mat.Dense, *mat.Dense) {
+	// Initialize weights using Glorot uniform method
+	weightsStdDev := math.Sqrt(2.0 / float64(numInputs+numOutputs))
+	weights := mat.NewDense(numInputs, numOutputs, nil)
+	for i := 0; i < numInputs; i++ {
+		for j := 0; j < numOutputs; j++ {
+			weights.Set(i, j, rand.NormFloat64()*weightsStdDev)
+		}
+	}
+
+	// Initialize biases with small random values
+	biases := mat.NewDense(1, numOutputs, nil)
+	//for i := 0; i < numOutputs; i++ {
+	//	biases.Set(i, 0, rand.NormFloat64()*0.01)
+	//}
+
+	return weights, biases
 }
 
 func (layer *Layer) Forward(inputs *mat.Dense, training bool) {
