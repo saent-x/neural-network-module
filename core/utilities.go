@@ -2,6 +2,7 @@ package core
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -413,6 +414,30 @@ func EncodeStructToJSON(d interface{}, filename string) error {
 		return err
 	}
 
+	return nil
+}
+
+func SaveMatrixToCSV(matrix *mat.Dense, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("could not create file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	rows, cols := matrix.Dims()
+	for i := 0; i < rows; i++ {
+		var row []string
+		for j := 0; j < cols; j++ {
+			value := matrix.At(i, j)
+			row = append(row, strconv.FormatFloat(value, 'f', -1, 64))
+		}
+		if err := writer.Write(row); err != nil {
+			return fmt.Errorf("could not write row to CSV: %v", err)
+		}
+	}
 	return nil
 }
 
