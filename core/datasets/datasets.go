@@ -4,20 +4,21 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/saent-x/ids-nn/core"
-	"github.com/saent-x/ids-nn/core/datamodels"
-	"github.com/saent-x/ids-nn/core/scaling"
-	"gonum.org/v1/gonum/mat"
 	"io"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/saent-x/ids-nn/core"
+	"github.com/saent-x/ids-nn/core/datamodels"
+	"github.com/saent-x/ids-nn/core/scaling"
+	"gonum.org/v1/gonum/mat"
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-sm")
+	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-full-001")
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +52,7 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-sm")
+	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
 	if err != nil {
 		panic(err)
 	}
@@ -83,14 +84,14 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	//	panic(err)
 	//}
 
-	scaledX := scaling.ZScoreNormalizationDense(training_data.X)
-	scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
+	// scaledX := scaling.ZScoreNormalizationDense(training_data.X)
+	// scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
 
-	training_data.X.Copy(scaledX)
-	testing_data.Y.Copy(scaledXtest)
+	// training_data.X.Copy(scaledX)
+	// testing_data.Y.Copy(scaledXtest)
 
 	// save training data to file
-	// core.SaveMatrixToCSV(training_data.X, "processed_data.csv")
+	core.SaveMatrixToCSV(training_data, "full_processed_can_data.csv")
 
 	return training_data, testing_data
 }
@@ -313,7 +314,7 @@ func readCSV(file io.Reader) ([][]float64, []float64, error) {
 	var attackValues []float64
 	var prevTimestamp float64
 	lines := 0
-	epsilon := 0.000008
+	epsilon := .0
 
 	// Read the file line by line
 	for {
@@ -355,11 +356,11 @@ func readCSV(file io.Reader) ([][]float64, []float64, error) {
 						log.Fatalf("Error converting hex to decimal: %v", err)
 					}
 
-					for i := 0; i < len(vals); i++ {
-						if vals[i] == 0 {
-							vals[i] = epsilon
-						}
-					}
+					// for i := 0; i < len(vals); i++ {
+					// 	if vals[i] == 0 {
+					// 		vals[i] = epsilon
+					// 	}
+					// }
 
 					row[2] = vals[0]
 					row[3] = vals[1]

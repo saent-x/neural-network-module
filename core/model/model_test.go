@@ -133,15 +133,15 @@ func TestCANDatasetTraining(t *testing.T) {
 
 	CAN_dataset_model := New()
 
-	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 896, 0, 5e-4, 0, 5e-4))
+	CAN_dataset_model.Add(layer.CreateLayer(training_data.X.RawMatrix().Cols, 896, 0, 1e-5, 0, 1e-5))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
 	CAN_dataset_model.Add(layer.NewDropoutLayer(0.1))
 
-	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 896, 0, 1e-5, 0, 1e-5))
 	CAN_dataset_model.Add(new(activation.ReLU))
 
-	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 0, 0, 0))
+	CAN_dataset_model.Add(layer.CreateLayer(896, 2, 0, 1e-5, 0, 1e-5))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
 	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.001, 1e-3, 1e-7, 0.9, 0.999, 1.0), new(accuracy.CategoricalAccuracy))
