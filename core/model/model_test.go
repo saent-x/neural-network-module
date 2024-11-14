@@ -289,8 +289,8 @@ func TestModel_Predict(t *testing.T) {
 }
 
 func TestSavingModelFunc(t *testing.T) {
-	m := New()
-	m.SaveParameters("test_model_1")
+
+	_, _ = datasets.LoadCANDataset(true)
 }
 
 func TestRetrievingModelFunc(t *testing.T) {

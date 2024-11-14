@@ -9,7 +9,6 @@ import (
 )
 
 type BinaryCrossEntropy struct {
-	//Regularization_Loss float64
 	Loss
 }
 
@@ -46,7 +45,7 @@ func (binaryCrossEntropy *BinaryCrossEntropy) Forward(y_pred *mat.Dense, y_true 
 		return 1 - v
 	}, y_true)
 
-	eqn_1.MulElem(y_true, &fn_1) // TODO: debug here when epoch is 10000
+	eqn_1.MulElem(y_true, &fn_1)
 	eqn_2.MulElem(&fn_3, &fn_2)
 
 	result.Add(&eqn_1, &eqn_2)

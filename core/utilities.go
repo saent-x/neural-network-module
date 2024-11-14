@@ -417,7 +417,7 @@ func EncodeStructToJSON(d interface{}, filename string) error {
 	return nil
 }
 
-func SaveMatrixToCSV(matrix *mat.Dense, filename string) error {
+func SaveMatrixToCSV(matrix *mat.Dense, target *mat.Dense, filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("could not create file: %v", err)

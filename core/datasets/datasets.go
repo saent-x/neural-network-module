@@ -17,7 +17,7 @@ import (
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-sm")
+	x, y, err := ReadCAN_Folder("../../core/datasets/temp")
 	if err != nil {
 		panic(err)
 	}
@@ -51,28 +51,28 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-sm")
-	if err != nil {
-		panic(err)
-	}
-
-	//x_test, y_test, err = Oversample(x_test, y_test)
+	//x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full")
 	//if err != nil {
 	//	panic(err)
 	//}
-
-	// Convert data to mat.Dense
-	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
-	Y_mat_test := mat.NewDense(1, len(y_test), y_test)
-
-	for i, row := range x_test {
-		X_mat_test.SetRow(i, row)
-	}
-
-	testing_data := datamodels.ValidationData{
-		X: X_mat_test,
-		Y: Y_mat_test,
-	}
+	//
+	////x_test, y_test, err = Oversample(x_test, y_test)
+	////if err != nil {
+	////	panic(err)
+	////}
+	//
+	//// Convert data to mat.Dense
+	//X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
+	//Y_mat_test := mat.NewDense(1, len(y_test), y_test)
+	//
+	//for i, row := range x_test {
+	//	X_mat_test.SetRow(i, row)
+	//}
+	//
+	//testing_data := datamodels.ValidationData{
+	//	X: X_mat_test,
+	//	Y: Y_mat_test,
+	//}
 
 	//fmt.Println(mat.Formatted(core.FirstN(training_data.X, 10)))
 
@@ -83,16 +83,16 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	//	panic(err)
 	//}
 
-	scaledX := scaling.ZScoreNormalizationDense(training_data.X)
-	scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
-
-	training_data.X.Copy(scaledX)
-	testing_data.Y.Copy(scaledXtest)
+	//scaledX := scaling.ZScoreNormalizationDense(training_data.X)
+	//scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
+	//
+	//training_data.X.Copy(scaledX)
+	//testing_data.Y.Copy(scaledXtest)
 
 	// save training data to file
-	// core.SaveMatrixToCSV(training_data.X, "processed_data.csv")
+	core.SaveMatrixToCSV(training_data.X, "updated_triple.csv")
 
-	return training_data, testing_data
+	return training_data, datamodels.ValidationData{}
 }
 
 // Oversample oversamples the attack frames to match the number of normal frames while respecting time intervals
@@ -162,20 +162,20 @@ func ScaleValues(matrix *mat.Dense) error {
 	for i := 0; i < cols; i++ {
 		col := matrix.ColView(i)
 
-		//var scaledCol []float64
-		colSlice := core.VectorToSlice(col)
-		scaledCol, err := scaling.RobustScale(colSlice)
-		if err != nil {
-			return err
-		}
-
-		//for j := 0; j < col.Len(); j++ {
-		//	scaledValue, err := scaling.Scale(scaling.NEG_ONE_TO_POS_ONE, col.AtVec(j), maxValue)
-		//	if err != nil {
-		//		return err
-		//	}
-		//	scaledCol = append(scaledCol, scaledValue)
+		var scaledCol []float64
+		//colSlice := core.VectorToSlice(col)
+		//scaledCol, err := scaling.RobustScale(colSlice)
+		//if err != nil {
+		//	return err
 		//}
+
+		for j := 0; j < col.Len(); j++ {
+			scaledValue, err := scaling.Scale(scaling.ZERO_TO_ONE, col.AtVec(j), mat.Max(col))
+			if err != nil {
+				return err
+			}
+			scaledCol = append(scaledCol, scaledValue)
+		}
 
 		matrix.SetCol(i, scaledCol)
 	}

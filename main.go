@@ -18,7 +18,9 @@ import (
 )
 
 func main() {
-	RunMetrics()
+	//RunMetrics()
+	_, _ = datasets.LoadCANDataset(true)
+
 }
 
 func RunMetrics() {
@@ -130,7 +132,7 @@ func TestCANDatasetTraining() {
 	CAN_dataset_model.Add(layer.CreateLayer(896, 10, 0, 0, 0, 0))
 	CAN_dataset_model.Add(new(activation.SoftMax))
 
-	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999), new(accuracy.CategoricalAccuracy))
+	CAN_dataset_model.Set(new(loss.CategoricalCrossEntropy), optimization.CreateAdaptiveMomentum(0.005, 5e-5, 1e-7, 0.9, 0.999, 0), new(accuracy.CategoricalAccuracy))
 
 	CAN_dataset_model.Finalize()
 	CAN_dataset_model.Train(training_data, testing_data, 10, 2000, 10000)
