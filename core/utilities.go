@@ -417,7 +417,8 @@ func EncodeStructToJSON(d interface{}, filename string) error {
 	return nil
 }
 
-func SaveMatrixToCSV(matrix *mat.Dense, target *mat.Dense, filename string) error {
+func SaveMatrixToCSV(traindata datamodels.TrainingData, filename string) error {
+	matrix := traindata.X
 	file, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("could not create file: %v", err)
@@ -428,12 +429,21 @@ func SaveMatrixToCSV(matrix *mat.Dense, target *mat.Dense, filename string) erro
 	defer writer.Flush()
 
 	rows, cols := matrix.Dims()
+	firstrow := []string{"arbitration_id", "df1", "df2", "df3", "df4", "df5", "df6", "df7", "df8","time_interval", "attack" }
+
+	if err := writer.Write(firstrow); err != nil {
+		return fmt.Errorf("could not write row to CSV: %v", err)
+	}
+
 	for i := 0; i < rows; i++ {
 		var row []string
 		for j := 0; j < cols; j++ {
 			value := matrix.At(i, j)
 			row = append(row, strconv.FormatFloat(value, 'f', -1, 64))
 		}
+
+		row = append(row, strconv.FormatFloat(traindata.Y.At(0,i), 'f', -1, 64))
+
 		if err := writer.Write(row); err != nil {
 			return fmt.Errorf("could not write row to CSV: %v", err)
 		}

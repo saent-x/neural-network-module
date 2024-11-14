@@ -4,20 +4,21 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/saent-x/ids-nn/core"
-	"github.com/saent-x/ids-nn/core/datamodels"
-	"github.com/saent-x/ids-nn/core/scaling"
-	"gonum.org/v1/gonum/mat"
 	"io"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/saent-x/ids-nn/core"
+	"github.com/saent-x/ids-nn/core/datamodels"
+	"github.com/saent-x/ids-nn/core/scaling"
+	"gonum.org/v1/gonum/mat"
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/temp")
+	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-full-001")
 	if err != nil {
 		panic(err)
 	}
@@ -51,28 +52,28 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	//x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full")
+	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
+	if err != nil {
+		panic(err)
+	}
+
+	//x_test, y_test, err = Oversample(x_test, y_test)
 	//if err != nil {
 	//	panic(err)
 	//}
-	//
-	////x_test, y_test, err = Oversample(x_test, y_test)
-	////if err != nil {
-	////	panic(err)
-	////}
-	//
-	//// Convert data to mat.Dense
-	//X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
-	//Y_mat_test := mat.NewDense(1, len(y_test), y_test)
-	//
-	//for i, row := range x_test {
-	//	X_mat_test.SetRow(i, row)
-	//}
-	//
-	//testing_data := datamodels.ValidationData{
-	//	X: X_mat_test,
-	//	Y: Y_mat_test,
-	//}
+
+	// Convert data to mat.Dense
+	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
+	Y_mat_test := mat.NewDense(1, len(y_test), y_test)
+
+	for i, row := range x_test {
+		X_mat_test.SetRow(i, row)
+	}
+
+	testing_data := datamodels.ValidationData{
+		X: X_mat_test,
+		Y: Y_mat_test,
+	}
 
 	//fmt.Println(mat.Formatted(core.FirstN(training_data.X, 10)))
 
@@ -83,16 +84,16 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	//	panic(err)
 	//}
 
-	//scaledX := scaling.ZScoreNormalizationDense(training_data.X)
-	//scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
-	//
-	//training_data.X.Copy(scaledX)
-	//testing_data.Y.Copy(scaledXtest)
+	// scaledX := scaling.ZScoreNormalizationDense(training_data.X)
+	// scaledXtest := scaling.ZScoreNormalizationDense(testing_data.X)
+
+	// training_data.X.Copy(scaledX)
+	// testing_data.Y.Copy(scaledXtest)
 
 	// save training data to file
-	core.SaveMatrixToCSV(training_data.X, "updated_triple.csv")
+	core.SaveMatrixToCSV(training_data, "full_processed_can_data.csv")
 
-	return training_data, datamodels.ValidationData{}
+	return training_data, testing_data
 }
 
 // Oversample oversamples the attack frames to match the number of normal frames while respecting time intervals
@@ -162,20 +163,20 @@ func ScaleValues(matrix *mat.Dense) error {
 	for i := 0; i < cols; i++ {
 		col := matrix.ColView(i)
 
-		var scaledCol []float64
-		//colSlice := core.VectorToSlice(col)
-		//scaledCol, err := scaling.RobustScale(colSlice)
-		//if err != nil {
-		//	return err
-		//}
-
-		for j := 0; j < col.Len(); j++ {
-			scaledValue, err := scaling.Scale(scaling.ZERO_TO_ONE, col.AtVec(j), mat.Max(col))
-			if err != nil {
-				return err
-			}
-			scaledCol = append(scaledCol, scaledValue)
+		//var scaledCol []float64
+		colSlice := core.VectorToSlice(col)
+		scaledCol, err := scaling.RobustScale(colSlice)
+		if err != nil {
+			return err
 		}
+
+		//for j := 0; j < col.Len(); j++ {
+		//	scaledValue, err := scaling.Scale(scaling.NEG_ONE_TO_POS_ONE, col.AtVec(j), maxValue)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	scaledCol = append(scaledCol, scaledValue)
+		//}
 
 		matrix.SetCol(i, scaledCol)
 	}
@@ -313,7 +314,7 @@ func readCSV(file io.Reader) ([][]float64, []float64, error) {
 	var attackValues []float64
 	var prevTimestamp float64
 	lines := 0
-	epsilon := 0.000008
+	epsilon := .0
 
 	// Read the file line by line
 	for {
@@ -355,11 +356,11 @@ func readCSV(file io.Reader) ([][]float64, []float64, error) {
 						log.Fatalf("Error converting hex to decimal: %v", err)
 					}
 
-					for i := 0; i < len(vals); i++ {
-						if vals[i] == 0 {
-							vals[i] = epsilon
-						}
-					}
+					// for i := 0; i < len(vals); i++ {
+					// 	if vals[i] == 0 {
+					// 		vals[i] = epsilon
+					// 	}
+					// }
 
 					row[2] = vals[0]
 					row[3] = vals[1]
