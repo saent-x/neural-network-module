@@ -18,7 +18,7 @@ import (
 )
 
 func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.ValidationData) {
-	x, y, err := ReadCAN_Folder("../../core/datasets/can-training-full-001")
+	x, y, err := ReadCAN_Folder("../../core/datasets/temp")
 	if err != nil {
 		panic(err)
 	}
@@ -52,10 +52,10 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	}
 
 	// get validation file
-	x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
-	if err != nil {
-		panic(err)
-	}
+	//x_test, y_test, err := ReadCAN_Folder("../../core/datasets/can-testing-full-001")
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	//x_test, y_test, err = Oversample(x_test, y_test)
 	//if err != nil {
@@ -63,17 +63,17 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	//}
 
 	// Convert data to mat.Dense
-	X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
-	Y_mat_test := mat.NewDense(1, len(y_test), y_test)
-
-	for i, row := range x_test {
-		X_mat_test.SetRow(i, row)
-	}
-
-	testing_data := datamodels.ValidationData{
-		X: X_mat_test,
-		Y: Y_mat_test,
-	}
+	//X_mat_test := mat.NewDense(len(x_test), len(x_test[0]), nil)
+	//Y_mat_test := mat.NewDense(1, len(y_test), y_test)
+	//
+	//for i, row := range x_test {
+	//	X_mat_test.SetRow(i, row)
+	//}
+	//
+	//testing_data := datamodels.ValidationData{
+	//	X: X_mat_test,
+	//	Y: Y_mat_test,
+	//}
 
 	//fmt.Println(mat.Formatted(core.FirstN(training_data.X, 10)))
 
@@ -91,9 +91,9 @@ func LoadCANDataset(shuffle bool) (datamodels.TrainingData, datamodels.Validatio
 	// testing_data.Y.Copy(scaledXtest)
 
 	// save training data to file
-	core.SaveMatrixToCSV(training_data, "full_processed_can_data.csv")
+	core.SaveMatrixToCSV(training_data, "triple.csv")
 
-	return training_data, testing_data
+	return training_data, datamodels.ValidationData{}
 }
 
 // Oversample oversamples the attack frames to match the number of normal frames while respecting time intervals
